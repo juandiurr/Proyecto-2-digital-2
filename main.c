@@ -76,12 +76,20 @@ uint8_t x2 = l;
 uint8_t y2 = g;
 uint8_t n1 = 0;//para xx, yf y yi
 uint8_t n2 = 0;//para yy, xf y xi
+uint8_t n3 = 0;//para xx2, yf y yi
+uint8_t n4 = 0;//para yy2, xf y xi
 uint8_t xx[20];
 uint8_t yy[20];
 uint8_t xi[20];
 uint8_t xf[20];
 uint8_t yi[20];
 uint8_t yf[20];
+uint8_t xx2[20];
+uint8_t yy2[20];
+uint8_t xi2[20];
+uint8_t xf2[20];
+uint8_t yi2[20];
+uint8_t yf2[20];
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -191,7 +199,6 @@ int main(void)
 		  originx2 = 255;
 		  movex2 = 223;
 		  movey2 = 231;
-		  FillRect(movex,movey,x,y,0x1112);
 		  x = l;
 		  y = g;
 		  x2 = l;
@@ -206,6 +213,7 @@ int main(void)
 		  abajo2 = 0;
 		  derecha2 = 0;
 		  izquierda2 = 0;
+		  HAL_Delay(100);
 		  state = 3;
 	  }
 	  do{
@@ -241,6 +249,23 @@ int main(void)
 
 					  i = xi[oi];
 					  f = xf[oi];
+					  oi = comparacion(i,f,movex);
+					  io = comparacion(i,f,movex+g);
+					  if(oi == 1 || io == 1){
+						  state = 0;
+					  }
+				  }
+				  oi = d_posicion(yy2, n4, movey);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = xi2[oi];
+					  f = xf2[oi];
 					  oi = comparacion(i,f,movex);
 					  io = comparacion(i,f,movex+g);
 					  if(oi == 1 || io == 1){
@@ -296,6 +321,23 @@ int main(void)
 						  state = 0;
 					  }
 				  }
+				  oi = d_posicion(yy2, n4, movey+l);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = xi2[oi];
+					  f = xf2[oi];
+					  oi = comparacion(i,f,movex);
+					  io = comparacion(i,f,movex+g);
+					  if(oi == 1 || io == 1){
+						  state = 0;
+					  }
+				  }
 				  movey += 4;
 				  linea+=4;
 				  V_line(originx,originy,linea,0xFFFF);
@@ -324,6 +366,23 @@ int main(void)
 						  state = 0;
 					  }
 				  }
+				  oi = d_posicion(xx2, n3, movex+l);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = yi2[oi];
+					  f = yf2[oi];
+					  oi = comparacion(i,f,movey);
+					  io = comparacion(i,f,movey+g);
+					  if(oi == 1 || io == 1){
+						  state = 0;
+					  }
+				  }
 				  movex += 4;
 				  linea+=4;
 				  H_line(originx,originy,linea,0xFFFF);
@@ -346,6 +405,23 @@ int main(void)
 
 					  i = yi[oi];
 					  f = yf[oi];
+					  oi = comparacion(i,f,movey);
+					  io = comparacion(i,f,movey+g);
+					  if(oi == 1 || io == 1){
+						  state = 0;
+					  }
+				  }
+				  oi = d_posicion(xx2, n3, movex);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = yi2[oi];
+					  f = yf2[oi];
 					  oi = comparacion(i,f,movey);
 					  io = comparacion(i,f,movey+g);
 					  if(oi == 1 || io == 1){
@@ -384,6 +460,23 @@ int main(void)
 						  state = 5;
 					  }
 				  }
+				  oi = d_posicion(yy2, n4, movey2);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = xi2[oi];
+					  f = xf2[oi];
+					  oi = comparacion(i,f,movex2);
+					  io = comparacion(i,f,movex2+g);
+					  if(oi == 1 || io == 1){
+						  state = 5;
+					  }
+				  }
 				  movey2 -= 4;
 				  linea2+=4;
 				  V_line(originx2,movey2+l,linea2,0xFFFF);
@@ -410,6 +503,23 @@ int main(void)
 
 					  i = xi[oi];
 					  f = xf[oi];
+					  oi = comparacion(i,f,movex2);
+					  io = comparacion(i,f,movex2+g);
+					  if(oi == 1 || io == 1){
+						  state = 5;
+					  }
+				  }
+				  oi = d_posicion(yy2, n4, movey2);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = xi2[oi];
+					  f = xf2[oi];
 					  oi = comparacion(i,f,movex2);
 					  io = comparacion(i,f,movex2+g);
 					  if(oi == 1 || io == 1){
@@ -444,6 +554,23 @@ int main(void)
 						  state = 5;
 					  }
 				  }
+				  oi = d_posicion(xx2, n3, movex2+l);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = yi2[oi];
+					  f = yf2[oi];
+					  oi = comparacion(i,f,movey2);
+					  io = comparacion(i,f,movey2+g);
+					  if(oi == 1 || io == 1){
+						  state = 5;
+					  }
+				  }
 				  movex2 += 4;
 				  linea2+=4;
 				  H_line(originx2,originy2,linea2,0xFFFF);
@@ -466,6 +593,23 @@ int main(void)
 
 					  i = yi[oi];
 					  f = yf[oi];
+					  oi = comparacion(i,f,movey2);
+					  io = comparacion(i,f,movey2+g);
+					  if(oi == 1 || io == 1){
+						  state = 5;
+					  }
+				  }
+				  oi = d_posicion(xx2, n3, movex2);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = yi2[oi];
+					  f = yf2[oi];
 					  oi = comparacion(i,f,movey2);
 					  io = comparacion(i,f,movey2+g);
 					  if(oi == 1 || io == 1){
@@ -759,8 +903,20 @@ void vaciar_listas(void){
 		yi[i] = 0;
 		yf[i] = 0;
 	}
+	for(int i = 0; i <= n3; i++){
+		xx2[i] = 0;
+		yi2[i] = 0;
+		yf2[i] = 0;
+	}
+	for(int i = 0; i <= n4; i++){
+		yy[i] = 0;
+		xi[i] = 0;
+		xf[i] = 0;
+	}
 	n1 = 0;
 	n2 = 0;
+	n3 = 0;
+	n4 = 0;
 
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
@@ -991,9 +1147,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 		if (derecha2 == 1){
 
-			yy[n2] = movey2 + 4;
-			xf[n2] = movex2+d+4;
-			xi[n2] = xx[n1];
+			yy2[n4] = movey2 + 4;
+			xf2[n4] = movex2+d+4;
+			xi2[n4] = xx2[n3];
 
 			originx2 = movex2+d+4;
 			movex2 = movex2 + d;
@@ -1002,9 +1158,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 		if (izquierda2 == 1){
 
-			yy[n2] = movey2+4;
-			xf[n2] = movex2+4;
-			xi[n2] = xx[n1];
+			yy2[n4] = movey2+4;
+			xf2[n4] = movex2+4;
+			xi2[n4] = xx2[n3];
 
 			originx2 = movex2+4;
 			movey2 = movey2 - d;
@@ -1038,10 +1194,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 
 		if (derecha2 == 1){
-			yy[n2] = movey2 + 4;
-			xf[n2] = movex2+d+4;
-			xi[n2] = xx[n1];
-			H_line(xi[n2],yy[n2],abs(xf[n2]-xi[n2]),0xFFFF);
+			yy2[n4] = movey2 + 4;
+			xf2[n4] = movex2+d+4;
+			xi2[n4] = xx2[n3];
+
 
 
 			originx2=movex2+d+4;
@@ -1050,10 +1206,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 		if(izquierda == 1){
 
-			yy[n2] = movey2+4;
-			xf[n2] = movex2+4;
-			xi[n2] = xx[n1];
-			H_line(xf[n2],yy[n2],abs(xf[n2]-xi[n2]),0xFFFF);
+			yy2[n4] = movey2+4;
+			xf2[n4] = movex2+4;
+			xi2[n4] = xx2[n3];
+
 			originx2=movex2+4;
 			originy2 = movey2;
 		}
@@ -1085,9 +1241,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 		if (abajo2 == 1){
 
-			xx[n1] = movex2+4;
-			yf[n1] = movey2+d+4;
-			yi[n1] = yy[n2];
+			xx2[n3] = movex2+4;
+			yf2[n3] = movey2+d+4;
+			yi2[n3] = yy2[n4];
 
 			originy2=movey2+4+d;
 			movey2 = movey2 + d;
@@ -1096,9 +1252,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 		if(arriba2 == 1){
 
-			xx[n1] = movex2+4;
-			yf[n1] = movey2 + 4;
-			yi[n1] = yy[n2];
+			xx2[n3] = movex2+4;
+			yf2[n3] = movey2 + 4;
+			yi2[n3] = yy2[n4];
 
 			originy2 = movey2+4;
 			originx2 = movex2;
@@ -1131,9 +1287,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 		if (arriba2 == 1){
 
-			xx[n1] = movex2+4;
-			yf[n1] = movey2 + 4;
-			yi[n1] = yy[n2];
+			xx2[n3] = movex2+4;
+			yf2[n3] = movey2 + 4;
+			yi2[n3] = yy2[n4];
 
 			movex2 = movex2 - d;
 			originy2 = movey2+4;
@@ -1141,9 +1297,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 		if (abajo2 == 1){
 
-			xx[n1] = movex2+4;
-			yf[n1] = movey2+d+4;
-			yi[n1] = yy[n2];
+			xx2[n3] = movex2+4;
+			yf2[n3] = movey2+d+4;
+			yi2[n3] = yy2[n4];
 
 			originy2 = movey2+d+4;
 
