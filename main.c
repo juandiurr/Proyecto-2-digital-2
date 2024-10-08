@@ -62,7 +62,14 @@ const uint8_t g = 9;
 const uint8_t d = 24;
 uint8_t x = l;
 uint8_t y = g;
-
+uint8_t n1 = 0;//para xx, yf y yi
+uint8_t n2 = 0;//para yy, xf y xi
+uint8_t xx[20];
+uint8_t yy[20];
+uint8_t xi[20];
+uint8_t xf[20];
+uint8_t yi[20];
+uint8_t yf[20];
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -87,6 +94,12 @@ static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM6_Init(void);
+void vaciar_listas(void);
+int8_t d_posicion(uint8_t arr[], uint8_t size, uint8_t numero);
+int8_t d_posicion2(uint8_t arr[], uint8_t size,  uint8_t numero);
+uint8_t comparacion(uint8_t num1, uint8_t num2, uint8_t numero);
+uint8_t min(uint8_t num1, uint8_t num2);
+uint8_t max(uint8_t num1, uint8_t num2);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -110,7 +123,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
- HAL_Init();
+d HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -134,9 +147,8 @@ int main(void)
   LCD_Init();
   LCD_Clear(0x00);
   //FillRect(288,0,32,8,0x1112);
-  //FillRect(288,0,32,300,0x630C);
-  H_line(20,50,100,0xFFFF);
-  V_line(100,50,200,0xFFFF);
+  FillRect(288,0,32,300,0x630C);
+
 
   /* USER CODE END 2 */
 
@@ -157,6 +169,7 @@ int main(void)
 		  HAL_Delay(50);
 	  }while(state == 1);
 	  if(state == 2){
+		  vaciar_listas();
 		  movex = 0;
 		  movey = 0;
 		  originy = 4;
@@ -183,6 +196,24 @@ int main(void)
 			  }
 			  if (arriba == 2){
 
+				  int8_t oi = 0;
+				  oi = d_posicion(yy, n2, movey);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = xi[oi];
+					  f = xf[oi];
+					  oi = comparacion(i,f,movex);
+					  io = comparacion(i,f,movex+g);
+					  if(oi == 1 || io == 1){
+						  state = 0;
+					  }
+				  }
 				  movey -= 4;
 				  linea+=4;
 				  V_line(originx,movey+l,linea,0xFFFF);
@@ -192,8 +223,46 @@ int main(void)
 
 				  FillRect(movex+5,movey+l,2,4,0x023F);
 				  FillRect(movex+7,movey+l,2,4,0x0000);
+				  if (c == 1){
+					  /*uint8_t oi = 0;
+					  oi = d_posicion2(yy, n2, movey);
+					  if (oi != -1){
+						  //FillRect(288,0,32,300,0xF800);
+						  //HAL_Delay(100);
+						  //FillRect(288,0,32,300,0x630C);
+						  uint8_t i;
+						  uint8_t f;
+						  uint8_t io;
+						  i = xi[oi];
+						  f = xf[oi];
+						  oi = comparacion(i,f,movex);
+						  io = comparacion(i,f,movex+g);
+						  if(oi == 1 || io == 1){
+							state = 0;
+						  }
+					  }*/
+					  c = 0;
+				  }
 			  }
 			  if (abajo == 2){
+				  int8_t oi = 0;
+				  oi = d_posicion(yy, n2, movey+l);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = xi[oi];
+					  f = xf[oi];
+					  oi = comparacion(i,f,movex);
+					  io = comparacion(i,f,movex+g);
+					  if(oi == 1 || io == 1){
+						  state = 0;
+					  }
+				  }
 				  movey += 4;
 				  linea+=4;
 				  V_line(originx,originy,linea,0xFFFF);
@@ -204,6 +273,24 @@ int main(void)
 				  FillRect(movex+7,movey-4,2,4,0x0000);
 			  }
 			  if (derecha == 2){
+				  int8_t oi = 0;
+				  oi = d_posicion(xx, n1, movex+l);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = yi[oi];
+					  f = yf[oi];
+					  oi = comparacion(i,f,movey);
+					  io = comparacion(i,f,movey+g);
+					  if(oi == 1 || io == 1){
+						  state = 0;
+					  }
+				  }
 				  movex += 4;
 				  linea+=4;
 				  H_line(originx,originy,linea,0xFFFF);
@@ -214,6 +301,24 @@ int main(void)
 				  FillRect(movex-4,movey+7,4,2,0x0000);
 			  }
 			  if (izquierda == 2){
+				  int8_t oi = 0;
+				  oi = d_posicion(xx, n1, movex);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = yi[oi];
+					  f = yf[oi];
+					  oi = comparacion(i,f,movey);
+					  io = comparacion(i,f,movey+g);
+					  if(oi == 1 || io == 1){
+						  state = 0;
+					  }
+				  }
 				  movex -= 4;
 				  linea+=4;
 				  H_line(movex+l,originy,linea,0xFFFF);
@@ -445,8 +550,59 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+uint8_t min(uint8_t num1, uint8_t num2){
+	return (num1<num2) ? num1:num2;
+}
+uint8_t max(uint8_t num1, uint8_t num2){
+	return (num1>num2) ? num1:num2;
+}
+uint8_t comparacion(uint8_t num1, uint8_t num2, uint8_t numero){
+	uint8_t minimo;
+	uint8_t maximo;
+	minimo = min(num1,num2);
+	maximo = max(num1,num2);
+	if (numero >= minimo && numero <= maximo){
+		return 1;
+	}
+	return 0;
+}
+int8_t d_posicion(uint8_t arr[], uint8_t size, uint8_t numero){
+	uint8_t i = 0;
+	for(i = 0; i <= size; i++){
+		if (arr[i] >= numero-5 && arr[i] <= numero){
+			return i;
+		}
+	}
+	return -1;
+}
+int8_t d_posicion2(uint8_t arr[], uint8_t size,  uint8_t numero){//arriba y derecha
+	uint8_t i = 0;
+	for(i = 0; i <= size; i++){
+		if (numero >= arr[i] && numero <= arr[i] + l - 5){
+			return i;
+		}
+	}
+	return -1;
+}
+
+void vaciar_listas(void){
+	for(int i = 0; i <= n2; i++){
+		yy[i] = 0;
+		xi[i] = 0;
+		xf[i] = 0;
+	}
+	for(int i = 0; i <= n1; i++){
+		xx[i] = 0;
+		yi[i] = 0;
+		yf[i] = 0;
+	}
+	n1 = 0;
+	n2 = 0;
+
+}
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	c = 1;
+
 	if(RX[0] == 'e'){
 		if(state == 1){
 			state = 2;
@@ -454,6 +610,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 	}
 	if(RX[0] == 'w'){//arriba
+		n2++;
 		linea = 0;
 		FillRect(movex,movey,x,2,0x0000);
 		FillRect(movex,movey+2,x,2,0x023F);
@@ -478,18 +635,29 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 
 		if (derecha == 1){
+
+			yy[n2] = movey + 4;
+			xf[n2] = movex+d+4;
+			xi[n2] = xx[n1];
+
 			originx = movex+d+4;
 			movex = movex + d;
 			movey = movey - d;
 
 		}
 		if (izquierda == 1){
+
+			yy[n2] = movey+4;
+			xf[n2] = movex+4;
+			xi[n2] = xx[n1];
+
 			originx = movex+4;
 			movey = movey - d;
 		}
 
 	}
 	if(RX[0] == 's'){//abajo
+		n2++;
 		linea = 0;
 		FillRect(movex,movey,x,2,0x0000);
 		FillRect(movex,movey+2,x,2,0x023F);
@@ -515,11 +683,22 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 
 		if (derecha == 1){
+			yy[n2] = movey + 4;
+			xf[n2] = movex+d+4;
+			xi[n2] = xx[n1];
+			H_line(xi[n2],yy[n2],abs(xf[n2]-xi[n2]),0xFFFF);
+
+
 			originx=movex+d+4;
 			originy=movey;
 			movex = movex + d;
 		}
 		if(izquierda == 1){
+
+			yy[n2] = movey+4;
+			xf[n2] = movex+4;
+			xi[n2] = xx[n1];
+			H_line(xf[n2],yy[n2],abs(xf[n2]-xi[n2]),0xFFFF);
 			originx=movex+4;
 			originy = movey;
 		}
@@ -527,7 +706,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	}
 	if(RX[0] == 'a'){//izquierda
 		linea = 0;
-
+		n1++;
 		FillRect(movex,movey,2,y,0x0000);
 		FillRect(movex+2,movey,2,y,0x023F);
 		FillRect(movex+4,movey,1,y,0xFFFF);
@@ -551,10 +730,21 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 
 		if (arriba == 1){
+
+			xx[n1] = movex+4;
+			yf[n1] = movey + 4;
+			yi[n1] = yy[n2];
+
 			movex = movex - d;
 			originy = movey+4;
+
 		}
 		if (abajo == 1){
+
+			xx[n1] = movex+4;
+			yf[n1] = movey+d+4;
+			yi[n1] = yy[n2];
+
 			originy = movey+d+4;
 
 			movex = movex - d;
@@ -563,6 +753,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	}
 	if(RX[0] == 'd'){//derecha
 		linea = 0;
+		n1++;
 		FillRect(movex,movey,2,y,0x0000);
 		FillRect(movex+2,movey,2,y,0x023F);
 		FillRect(movex+4,movey,1,y,0xFFFF);
@@ -570,6 +761,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		FillRect(movex+7,movey,2,y,0x0000);
 		x = l;
 		y = g;
+
 		if (izquierda != 2){
 			derecha = 2;
 		}
@@ -585,18 +777,29 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 			izquierda--;
 		}
 		if (abajo == 1){
+
+			xx[n1] = movex+4;
+			yf[n1] = movey+d+4;
+			yi[n1] = yy[n2];
+
 			originy=movey+4+d;
 			movey = movey + d;
 			originx = movex;
 
 		}
 		if(arriba == 1){
+
+			xx[n1] = movex+4;
+			yf[n1] = movey + 4;
+			yi[n1] = yy[n2];
+
 			originy = movey+4;
 			originx = movex;
 		}
 
 
 	}
+
 	HAL_UART_Receive_IT(&huart2, RX, 1);
 }
 /*void TIM6_DAC_IRQHandler(void){
