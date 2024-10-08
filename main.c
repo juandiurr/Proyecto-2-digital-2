@@ -46,15 +46,25 @@ uint32_t totalSpace, freeSpace;
 char buffer[100];
 uint8_t start = 2;
 uint8_t movex = 0;
+uint8_t movex2 = 223;
+uint8_t movey2 = 231;
 uint8_t movey = 0;
+
 uint8_t arriba = 0;
 uint8_t abajo = 0;
 uint8_t derecha = 0;
 uint8_t izquierda = 0;
+uint8_t arriba2 = 0;
+uint8_t abajo2 = 0;
+uint8_t derecha2 = 0;
+uint8_t izquierda2 = 0;
 uint8_t state = 3;
 uint8_t linea = 0;
+uint8_t linea2 = 0;
 uint8_t originx = 0;
 uint8_t originy = 4;
+uint8_t originx2 = 0;
+uint8_t originy2 = 4;
 uint8_t c = 0;
 uint8_t RX[1]; // Buffer para recepción de datos
 const uint8_t l = 32;
@@ -62,6 +72,8 @@ const uint8_t g = 9;
 const uint8_t d = 24;
 uint8_t x = l;
 uint8_t y = g;
+uint8_t x2 = l;
+uint8_t y2 = g;
 uint8_t n1 = 0;//para xx, yf y yi
 uint8_t n2 = 0;//para yy, xf y xi
 uint8_t xx[20];
@@ -123,7 +135,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-d HAL_Init();
+ HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -147,7 +159,7 @@ d HAL_Init();
   LCD_Init();
   LCD_Clear(0x00);
   //FillRect(288,0,32,8,0x1112);
-  FillRect(288,0,32,300,0x630C);
+  FillRect(255,0,65,300,0x630C);
 
 
   /* USER CODE END 2 */
@@ -162,7 +174,8 @@ d HAL_Init();
 	  if(state == 0){
 		  HAL_Delay(2000);
 		  LCD_Clear(0x0000);
-		  LCD_Print("Fin Del Juego",50,110,2,0xFFFF,0x0000);
+		  LCD_Print("Fin Del Juego",50,90,2,0xFFFF,0x0000);
+		  LCD_Print("Jugador 2 gana", 40,110,2,0xFE20,0x0000);
 		  state = 1;
 	  }
 	  do{
@@ -174,26 +187,46 @@ d HAL_Init();
 		  movey = 0;
 		  originy = 4;
 		  originx = 0;
-		  //FillRect(movex,movey,x,y,0x1112);
+		  originy2 = 240-4;
+		  originx2 = 255;
+		  movex2 = 223;
+		  movey2 = 231;
+		  FillRect(movex,movey,x,y,0x1112);
 		  x = l;
 		  y = g;
-		  FillRect(50,110,230,20,0x0000);
-		  FillRect(288,0,32,300,0x630C);
+		  x2 = l;
+		  y2 = g;
+		  FillRect(35,90,230,100,0x0000);//para tapar el "Fin del juego"
+		  FillRect(255,0,65,300,0x630C);
 		  arriba = 0;
 		  abajo = 0;
 		  derecha = 0;
 		  izquierda = 0;
+		  arriba2 = 0;
+		  abajo2 = 0;
+		  derecha2 = 0;
+		  izquierda2 = 0;
 		  state = 3;
 	  }
 	  do{
-		  FillRect(movex,movey,x,y,0x1112);
+		  FillRect(movex,movey,x,y,0x1112);//jugador 1(azul)
+		  FillRect(movex2,movey2,x2,y2,0xFE20);//jugador 2 (amarillo)
 		  HAL_Delay(50);
-			  if(movex < 0 || movex > 275-l){
+			  if(movex < 0 || movex > 255-l){
 				  state = 0;
 			  }
 			  if(movey < 0 || movey > 240-l){
 				  state = 0;
 			  }
+			  /*if(movex2 < 0 || movex2 > 255-l){
+				  state = 0;
+			  }
+			  if(movey2 < 0 || movey2 > 240-l){
+				  state = 0;
+			  }*/
+			  //*****************************************************************************
+			  //******************************JUGADOR 1**************************************
+			  //*****************************************************************************
 			  if (arriba == 2){
 
 				  int8_t oi = 0;
@@ -329,8 +362,138 @@ d HAL_Init();
 				  FillRect(movex+l,movey+7,4,2,0x0000);
 
 			  }
+			  //******************************************************************************
+			  //******************************JUGADOR 2***************************************
+			  //*******************************************************************************
+			  if (arriba2 == 2){
+				  int8_t oi = 0;
+				  oi = d_posicion(yy, n2, movey2);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = xi[oi];
+					  f = xf[oi];
+					  oi = comparacion(i,f,movex2);
+					  io = comparacion(i,f,movex2+g);
+					  if(oi == 1 || io == 1){
+						  state = 5;
+					  }
+				  }
+				  movey2 -= 4;
+				  linea2+=4;
+				  V_line(originx2,movey2+l,linea2,0xFFFF);
+				  FillRect(movex2,movey2+l,2,4,0x0000);
+				  FillRect(movex2+2,movey2+l,2,4,0xCE00);
+				  //FillRect(movex+4,movey+l,1,4,0xFFFF);
+				  FillRect(movex2+5,movey2+l,2,4,0xCE00);
+				  FillRect(movex2+7,movey2+l,2,4,0x0000);
+				  if (c == 1){
+
+					  c = 0;
+				  }
+			  }
+			  if (abajo2 == 2){
+				  int8_t oi = 0;
+				  oi = d_posicion(yy, n2, movey2+l);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = xi[oi];
+					  f = xf[oi];
+					  oi = comparacion(i,f,movex2);
+					  io = comparacion(i,f,movex2+g);
+					  if(oi == 1 || io == 1){
+						  state = 5;
+					  }
+				  }
+				  movey2 += 4;
+				  linea2+=4;
+				  V_line(originx2,originy2,linea2,0xFFFF);
+				  FillRect(movex2,movey2-4,2,4,0x0000);
+				  FillRect(movex2+2,movey2-4,2,4,0xCE00);
+				  //FillRect(movex+4,movey-4,1,4,0xFFFF);
+				  FillRect(movex2+5,movey2-4,2,4,0xCE00);
+				  FillRect(movex2+7,movey2-4,2,4,0x0000);
+			  }
+			  if (derecha2 == 2){
+				  int8_t oi = 0;
+				  oi = d_posicion(xx, n1, movex2+l);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = yi[oi];
+					  f = yf[oi];
+					  oi = comparacion(i,f,movey2);
+					  io = comparacion(i,f,movey2+g);
+					  if(oi == 1 || io == 1){
+						  state = 5;
+					  }
+				  }
+				  movex2 += 4;
+				  linea2+=4;
+				  H_line(originx2,originy2,linea2,0xFFFF);
+				  FillRect(movex2-4,movey2,4,2,0x0000);
+				  FillRect(movex2-4,movey2+2,4,2,0xCE00);
+				  //FillRect(movex-4,movey+4,4,1,0xFFFF);
+				  FillRect(movex2-4,movey2+5,4,2,0xCE00);
+				  FillRect(movex2-4,movey2+7,4,2,0x0000);
+			  }
+			  if (izquierda2 == 2){
+				  int8_t oi = 0;
+				  oi = d_posicion(xx, n1, movex2);
+				  if (oi != -1){
+					  //FillRect(288,0,32,300,0xF800);
+					  //HAL_Delay(100);
+					  //illRect(288,0,32,300,0x630C);
+					  uint8_t i;
+					  uint8_t f;
+					  uint8_t io;
+
+					  i = yi[oi];
+					  f = yf[oi];
+					  oi = comparacion(i,f,movey2);
+					  io = comparacion(i,f,movey2+g);
+					  if(oi == 1 || io == 1){
+						  state = 5;
+					  }
+				  }
+				  movex2 -= 4;
+				  linea2+=4;
+				  H_line(movex2+l,originy2,linea2,0xFFFF);
+				  FillRect(movex2+l,movey2,4,2,0x0000);
+				  FillRect(movex2+l,movey2+2,4,2,0xCE00);
+				  //FillRect(movex+l,movey+4,4,1,0xFFFF);
+				  FillRect(movex2+l,movey2+5,4,2,0xCE00);
+				  FillRect(movex2+l,movey2+7,4,2,0x0000);
+
+			  }
 	  }while(state == 3);
+
 	  //FillRect(movex,movey,20,10,0x023F);
+	  if(state == 5){
+		  HAL_Delay(2000);
+		  LCD_Clear(0x0000);
+		  LCD_Print("Fin Del Juego",50,90,2,0xFFFF,0x0000);
+		  LCD_Print("Jugador 1 gana", 40,110,2,0x1112,0x0000);
+		  do{
+			  HAL_Delay(50);
+		  }while(state == 5);
+	  }
 
 
 
@@ -604,7 +767,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	c = 1;
 
 	if(RX[0] == 'e'){
-		if(state == 1){
+		if(state == 1 || state == 5){
 			state = 2;
 		}
 
@@ -796,8 +959,197 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 			originy = movey+4;
 			originx = movex;
 		}
+	}
+
+//************************************************************************************************
+//***********************************Jugador 2****************************************************
+//************************************************************************************************
+	if(RX[0] == 'y'){//arriba j2
+		n2++;
+		linea2 = 0;
+		FillRect(movex2,movey2,x2,2,0x0000);
+		FillRect(movex2,movey2+2,x2,2,0xCE00);
+		FillRect(movex2,movey2+4,x2,1,0xFFFF);
+		FillRect(movex2,movey2+5,x2,2,0xCE00);
+		FillRect(movex2,movey2+7,x2,2,0x0000);
+		x2 = g;
+		y2 = l;
+		if (abajo2 != 2){
+			arriba2 = 2;
+		}
+
+		if (derecha2 != 0){
+			derecha2--;
+		}
+		if (abajo2 != 0){
+			abajo2--;
+		}
+
+		if (izquierda2 != 0){
+			izquierda2--;
+		}
+
+		if (derecha2 == 1){
+
+			yy[n2] = movey2 + 4;
+			xf[n2] = movex2+d+4;
+			xi[n2] = xx[n1];
+
+			originx2 = movex2+d+4;
+			movex2 = movex2 + d;
+			movey2 = movey2 - d;
+
+		}
+		if (izquierda2 == 1){
+
+			yy[n2] = movey2+4;
+			xf[n2] = movex2+4;
+			xi[n2] = xx[n1];
+
+			originx2 = movex2+4;
+			movey2 = movey2 - d;
+		}
+
+	}
+	if(RX[0] == 'h'){//abajo j2
+		n2++;
+		linea2 = 0;
+		FillRect(movex2,movey2,x2,2,0x0000);
+		FillRect(movex2,movey2+2,x2,2,0xCE00);
+		FillRect(movex2,movey2+4,x2,1,0xFFFF);
+		FillRect(movex2,movey2+5,x2,2,0xCE00);
+		FillRect(movex2,movey2+7,x2,2,0x0000);
+		x2 = g;
+		y2 = l;
+
+		if (arriba2 != 2){
+			abajo2 = 2;
+		}
+
+		if (arriba2 != 0){
+			arriba2--;
+		}
+		if (derecha2 != 0){
+			derecha2--;
+		}
+
+		if (izquierda2 != 0){
+			izquierda2--;
+		}
+
+		if (derecha2 == 1){
+			yy[n2] = movey2 + 4;
+			xf[n2] = movex2+d+4;
+			xi[n2] = xx[n1];
+			H_line(xi[n2],yy[n2],abs(xf[n2]-xi[n2]),0xFFFF);
 
 
+			originx2=movex2+d+4;
+			originy2=movey2;
+			movex2 = movex2 + d;
+		}
+		if(izquierda == 1){
+
+			yy[n2] = movey2+4;
+			xf[n2] = movex2+4;
+			xi[n2] = xx[n1];
+			H_line(xf[n2],yy[n2],abs(xf[n2]-xi[n2]),0xFFFF);
+			originx2=movex2+4;
+			originy2 = movey2;
+		}
+	}
+	if(RX[0] == 'j'){//derecha j2
+		linea2 = 0;
+		n1++;
+		FillRect(movex2,movey2,2,y2,0x0000);
+		FillRect(movex2+2,movey2,2,y2,0xCE00);
+		FillRect(movex2+4,movey2,1,y2,0xFFFF);
+		FillRect(movex2+5,movey2,2,y2,0xCE00);
+		FillRect(movex2+7,movey2,2,y2,0x0000);
+		x2 = l;
+		y2 = g;
+
+		if (izquierda2 != 2){
+			derecha2 = 2;
+		}
+
+		if (arriba2 != 0){
+			arriba2--;
+		}
+		if (abajo2 != 0){
+			abajo2--;
+		}
+
+		if (izquierda2 != 0){
+			izquierda2--;
+		}
+		if (abajo2 == 1){
+
+			xx[n1] = movex2+4;
+			yf[n1] = movey2+d+4;
+			yi[n1] = yy[n2];
+
+			originy2=movey2+4+d;
+			movey2 = movey2 + d;
+			originx2 = movex2;
+
+		}
+		if(arriba2 == 1){
+
+			xx[n1] = movex2+4;
+			yf[n1] = movey2 + 4;
+			yi[n1] = yy[n2];
+
+			originy2 = movey2+4;
+			originx2 = movex2;
+		}
+	}
+	if(RX[0] == 'g'){//izquierda j2
+		linea2 = 0;
+		n1++;
+		FillRect(movex2,movey2,2,y2,0x0000);
+		FillRect(movex2+2,movey2,2,y2,0xCE00);
+		FillRect(movex2+4,movey2,1,y2,0xFFFF);
+		FillRect(movex2+5,movey2,2,y2,0xCE00);
+		FillRect(movex2+7,movey2,2,y2,0x0000);
+		y2 = g;
+		x2 = l;
+		if (derecha2 != 2){
+			izquierda2 = 2;
+		}
+
+		if (arriba2 != 0){
+			arriba2--;
+		}
+		if (abajo2 != 0){
+			abajo2--;
+		}
+
+		if (derecha2 != 0){
+			derecha2--;
+		}
+
+		if (arriba2 == 1){
+
+			xx[n1] = movex2+4;
+			yf[n1] = movey2 + 4;
+			yi[n1] = yy[n2];
+
+			movex2 = movex2 - d;
+			originy2 = movey2+4;
+
+		}
+		if (abajo2 == 1){
+
+			xx[n1] = movex2+4;
+			yf[n1] = movey2+d+4;
+			yi[n1] = yy[n2];
+
+			originy2 = movey2+d+4;
+
+			movex2 = movex2 - d;
+			movey2 = movey2 + d;
+		}
 	}
 
 	HAL_UART_Receive_IT(&huart2, RX, 1);
