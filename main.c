@@ -95,10 +95,10 @@ uint8_t x = l;
 uint8_t y = g;
 uint8_t x2 = l;
 uint8_t y2 = g;
-uint8_t n1 = 0;//para xx, yf y yi
-uint8_t n2 = 0;//para yy, xf y xi
-uint8_t n3 = 0;//para xx2, yf y yi
-uint8_t n4 = 0;//para yy2, xf y xi
+int8_t n1 = -1;//para xx, yf y yi
+int8_t n2 = -1;//para yy, xf y xi
+int8_t n3 = -1;//para xx2, yf y yi
+int8_t n4 = -1;//para yy2, xf y xi
 uint8_t io = 0;
 uint8_t xx[20];
 uint8_t yy[20];
@@ -124,6 +124,9 @@ int8_t j1[2];
 int8_t j2[2];
 int8_t gj2 = -1;
 int8_t gj1 = -1;
+
+uint8_t turbo1 = 0;
+uint8_t turbo2 = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -136,6 +139,7 @@ SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim6;
 
+UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -146,8 +150,11 @@ UART_HandleTypeDef huart2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_USART2_UART_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_UART5_Init(void);
+static void MX_USART2_UART_Init(void);
+/* USER CODE BEGIN PFP */
+
 void vaciar_listas(void);
 int8_t d_posicion(uint8_t arr[], uint8_t size, uint8_t numero);
 int8_t d_posicion2(uint8_t arr[], uint8_t size, uint8_t numero, uint8_t velocidad);
@@ -159,8 +166,6 @@ void j1borrar(void);
 void j2borrar(void);
 
 void transmit_uart(char *message);
-/* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -199,12 +204,13 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   MX_FATFS_Init();
-  MX_USART2_UART_Init();
   MX_TIM6_Init();
+  MX_UART5_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_UART_Receive_IT(&huart2, RX, 1);
   LCD_Init();
-  LCD_Clear(0x00);
+  //LCD_Clear(0x00);
   //FillRect(288,0,32,8,0x1112);
   //FillRect(255,0,65,300,0x630C);
 
@@ -217,1360 +223,1491 @@ int main(void)
   {
 	  //320x240
     /* USER CODE END WHILE */
-	  //
+
+    /* USER CODE BEGIN 3 */
 	  if(state == 0){
-		  char buffer[4];
-		  transmit_uart("3");
-		  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
-		  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
-		  if(derecha == 2){
-			  LCD_Bitmap(movex+pr,movey,18,9,moto_derecha);
-		  }
-		  if(izquierda == 2){
-			  LCD_Bitmap(movex+pr,movey,18,9,moto_izquierda);
-		  }
-		  if(abajo == 2){
-			  LCD_Bitmap(movex,movey+pr,9,18,moto_abajo);
-		  }
-		  if(arriba == 2){
-			  LCD_Bitmap(movex,movey+pr,9,18,moto_arriba);
-		  }
-		  HAL_Delay(2000);
-		  LCD_Clear(0x0000);
-		  LCD_Print("Fin Del Juego",50,90,2,0xFFFF,0x0000);
-		  LCD_Print("Jugador 2 gana", 40,110,2,rastroj2,0x0000);
-		  gj2++;
-		  sprintf(buffer, "%u",gj2);
-		  LCD_Print(buffer, 175,130,2,rastroj2,0x0000);
-		  LCD_Print("-", 160,130,2,0xFFFF,0x0000);
-		  sprintf(buffer, "%u",gj1);
-		  if(gj2 == 0){
-			  LCD_Print("0",145,130,2,rastroj1,0x0000);
-		  }else{
-			  LCD_Print(buffer,145,130,2,rastroj1,0x0000);
-		  }
-
-		  do{
-			  HAL_Delay(50);
-		  }while(state == 0);
-	  }else if(state == 2){
-
-		  vaciar_listas();
-		  movex = 0;
-		  movey = 0;
-
-		  movex2 = 0;
-		  movey2 = 240-g;
-		  x = l;
-		  y = g;
-		  x2 = l;
-		  y2 = g;
-		  FillRect(35,90,230,100,0x0000);//para tapar el "Fin del juego"
-		  FillRect(255,0,2,240,azul);
-		  FillRect(257,0,1,240,0xFFFF);
-		  FillRect(258,0,2,240,azul);
-		  arriba = 0;
-		  abajo = 0;
-		  derecha = 0;
-		  izquierda = 0;
-		  arriba2 = 0;
-		  abajo2 = 0;
-		  derecha2 = 0;
-		  izquierda2 = 0;
-		  HAL_Delay(100);
-		  state = 3;
-	  }else if(state == 3){
-		  transmit_uart("2");
-		  do{
-			  HAL_Delay(50);
-
-
-			  if(x == l){
-				  if(movex < 0 || movex > 255-l){
-					  state = 0;
-				  }
-			  }else if(x == g){
-				  if(movey < 0 || movey > 240-l){
-					  state = 0;
-				  }
-			  }
-			  if(x2 == l){
-				  if(movex2 < 0 || movex2 > 255-l){
-					  //FillRect(0,0,30,60,rosa);
-					  state = 5;
-				  }
-			  }else if(x2 == g){
-				  if(movey2 < 0 || movey2 > 240-l){
-					  //FillRect(0,0,30,60,rosa);
-					  state = 5;
-				  }
-			  }
-
-
-			  //*****************************************************************************
-			  //******************************JUGADOR 1**************************************
-			  //*****************************************************************************
-
-			  if (arriba == 2){
-				  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
-				  LCD_Bitmap(movex,movey+pr,9,18,moto_arriba);
-				  //COLISION DE LOS RASTROS QUE DEJA EL JUGADOR
-				  int8_t oi = 0;
-				  oi = d_posicion3(yy, n2, movey,movey-vj1);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = xi[oi];
-					  f = xf[oi];
-					  oi = comparacion(i,f,movex);
-					  iio = comparacion(i,f,movex+g);
-					  if(oi == 1 || iio == 1){
-						  state = 0;
-					  }
-				  }
-				  oi = d_posicion3(yy2, n4, movey,movey-vj1);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = xi2[oi];
-					  f = xf2[oi];
-					  oi = comparacion(i,f,movex);
-					  iio = comparacion(i,f,movex+g);
-					  if(oi == 1 || iio == 1){
-						  state = 0;
-					  }
-				  }
-
-
-				  //COLISION CUANDO EL JUGADOR SE MUEVE
-				  if(izquierda2 == 2){
-					  io = comparacion(movex2,movex2-(vj2),movex+4);
-					  if(io == 1){
-						  //FillRect(255,0,65,300,0xFFFF);
-						  //HAL_Delay(100);
-						  //FillRect(255,0,65,300,0x630C);
-						  io = comparacion(movey, yy[n2], movey2);
-						  if(io == 1){
-							  state = 5;
-							  //FillRect(movex+4,movey2,0xFE20);
-						  }
-
-						  io = comparacion(movey, yy[n2], movey2+g);
-						  if(io == 1){
-							  state = 5;
-						  }
-					  }
-				  }
-				  if(derecha2 == 2){
-					  io = comparacion(movex2+l+vj2,movex2+l,movex+4);
-					  if(io == 1){
-						  io = comparacion(movey, yy[n2], movey2);
-						  if(io == 1){
-							  state = 5;
-						  }
-						  io = comparacion(movey,yy[n2],movey+g);
-						  if(io == 1){
-							  state = 5;
-						  }
-					  }
-
-				  }
-				  //CUANDO EL JUGADOR CRUZA
-				  if(c == 1){
-					  int8_t i=0;
-					  uint8_t o=0;
-					  i = d_posicion3(yy,n2,movey+l-mm,movey);
-					  if(i != -1){
-						  o = comparacion(xf[i], xi[i], movex);
-						  if (o == 1){
-							  state = 0;
-						  }
-						  o = comparacion(xf[i], xi[i], movex+g);
-						  if(o==1){
-							  state = 0;
-						  }
-					  }
-					  i = d_posicion3(yy2,n4,movey+l-mm,movey);
-					  if(i != -1){
-						  o = comparacion(xf2[i], xi2[i], movex);
-						  if (o == 1){
-							  state = 0;
-						  }
-						  o = comparacion(xf2[i], xi2[i], movex+g);
-						  if(o==1){
-							  state = 0;
-						  }
-					  }
-					  if(izquierda2 == 2){
-						  i = comparacion(movey,movey+l-mm,movey2+4);
-						  if(i == 1){
-							  o = comparacion(movex2,xx2[n3],movex);
-							  if (o == 1){
-								  state = 0;
-							  }
-							  o = comparacion(movex2,xx2[n3],movex+g);
-							  if (o == 1){
-								  state = 0;
-							  }
-						  }
-					  }
-					  if(derecha2 == 2){
-						  i = comparacion(movey,movey+l-mm,movey2+4);
-						  if(i == 1){
-							  o = comparacion(movex2+l,xx2[n3],movex);
-							  if(o == 1){
-								  state = 0;
-							  }
-							  o = comparacion(movex2+l,xx2[n3],movex+g);
-							  if(o == 1){
-								  state = 0;
-							  }
-						  }
-					  }
-
-
-					  c = 0;
-				  }
-				  //MOVIMIENTO DEL JUGADOR
-				  movey -= vj1;
-				  //RASTRO
-				  FillRect(movex,movey+l,2,vj1,0x0000);
-				  FillRect(movex+2,movey+l,2,vj1,rastroj1);
-				  FillRect(movex+4,movey+l,1,vj1,0xFFFF);
-
-				  FillRect(movex+5,movey+l,2,vj1,rastroj1);
-				  FillRect(movex+7,movey+l,2,vj1,0x0000);
+	  		  char buffer[4];
+	  		  transmit_uart("3");
+	  		  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
+	  		  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
+	  		  if(derecha == 2){
+	  			  LCD_Bitmap(movex+pr,movey,18,9,moto_derecha);
+	  			  LCD_Sprite(movex+20,movey-4,20,16,explosion,5,0,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex+20,movey-4,20,16,explosion,5,1,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex+20,movey-4,20,16,explosion,5,2,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex+20,movey-4,20,16,explosion,5,3,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex+20,movey-4,20,16,explosion,5,4,0,0);
+				  HAL_Delay(150);
+	  		  }
+	  		  if(izquierda == 2){
+	  			  LCD_Bitmap(movex+pr,movey,18,9,moto_izquierda);
+	  			  LCD_Sprite(movex-8,movey-4,20,16,explosion,5,0,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-8,movey-4,20,16,explosion,5,1,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-8,movey-4,20,16,explosion,5,2,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-8,movey-4,20,16,explosion,5,3,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-8,movey-4,20,16,explosion,5,4,0,0);
+				  HAL_Delay(150);
+	  		  }
+	  		  if(abajo == 2){
+	  			  LCD_Bitmap(movex,movey+pr,9,18,moto_abajo);
+	  			  LCD_Sprite(movex-6,movey+20,20,16,explosion,5,0,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-6,movey+20,20,16,explosion,5,1,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-6,movey+20,20,16,explosion,5,2,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-6,movey+20,20,16,explosion,5,3,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-6,movey+20,20,16,explosion,5,4,0,0);
+				  HAL_Delay(150);
+	  		  }
+	  		  if(arriba == 2){
+	  			  LCD_Bitmap(movex,movey+pr,9,18,moto_arriba);
+	  			  LCD_Sprite(movex-6,movey-8,20,16,explosion,5,0,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-6,movey-8,20,16,explosion,5,1,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-6,movey-8,20,16,explosion,5,2,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-6,movey-8,20,16,explosion,5,3,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex-6,movey-8,20,16,explosion,5,4,0,0);
+				  HAL_Delay(150);
+	  		  }
+	  		  if(derecha2 == 2){
+				  LCD_Bitmap(movex2+pr,movey2,18,9,moto_derecha);
 
 			  }
-	  ///////////////////////////////////////////////////////////////////////////////////////////////////
-			  if (abajo == 2){
-				  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
-				  LCD_Bitmap(movex,movey+pr+1,9,18,moto_abajo);
-				  int8_t oi = 0;
-				  oi = d_posicion3(yy, n2, movey+l,movey+l+vj1);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = xi[oi];
-					  f = xf[oi];
-					  oi = comparacion(i,f,movex);
-					  iio = comparacion(i,f,movex+g);
-					  if(oi == 1 || iio == 1){
-						  state = 0;
-					  }
-				  }
-				  oi = d_posicion3(yy2, n4, movey+l,movey+l+vj1);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = xi2[oi];
-					  f = xf2[oi];
-					  oi = comparacion(i,f,movex);
-					  iio = comparacion(i,f,movex+g);
-					  if(oi == 1 || iio == 1){
-						  state = 0;
-					  }
-				  }
-
-
-				  if(derecha2 == 2){
-					  io = comparacion(movex2+l+vj2,movex2+l,movex+4);
-					  if(io == 1){
-						  io = comparacion(movey+l, yy[n2], movey2);
-						  if(io == 1){
-							  state = 5;
-							  //FillRect(movex+4,movey2,0xFE20);
-						  }
-						  io = comparacion(movey+l, yy[n2], movey2+g);
-						  if(io == 1){
-							  state = 5;
-							  //FillRect(movex+4,movey2,0xFE20);
-						  }
-					  }
-				  }
-				  if(izquierda2 == 2){
-					  io = comparacion(movex2,movex2-vj2,movex+4);
-					  if(io == 1){
-						  io = comparacion(movey+l,yy[n2],movey2);
-						  if(io == 1){
-							  state = 5;
-						  }
-						  io = comparacion(movey+l,yy[n2],movey2+g);
-						  if(io == 1){
-							  state = 5;
-						  }
-					  }
-				  }
-				  //CUANDO EL JUGADOR CRUZA
-				  if(c == 1){
-					  int8_t i;
-					  uint8_t o;
-					  i = d_posicion3(yy,n2,movey+mm,movey+l);
-					  if(i != -1){
-						  o = comparacion(xf[i], xi[i], movex);
-						  if (o == 1){
-							  state = 0;
-						  }
-						  o = comparacion(xf[i], xi[i], movex+g);
-						  if(o==1){
-							  state = 0;
-						  }
-					  }
-					  i = d_posicion3(yy2,n4,movey+mm,movey+l);
-					  if(i != -1){
-						  o = comparacion(xf2[i], xi2[i], movex);
-						  if (o == 1){
-							  state = 0;
-						  }
-						  o = comparacion(xf2[i], xi2[i], movex+g);
-						  if(o==1){
-							  state = 0;
-						  }
-					  }
-					  if(derecha2 == 2){
-						  i = comparacion(movey+mm,movey+l,movey2+4);
-						  if(i == 1){
-							  o = comparacion(movex2+l,xx2[n3],movex);
-							  if (o == 1){
-								  state = 0;
-							  }
-							  o = comparacion(movex2+l,xx2[n3],movex+g);
-							  if (o == 1){
-								  state = 0;
-							  }
-						  }
-					  }
-					  if(izquierda2 == 2){
-						  i = comparacion(movey+mm,movey+l,movey2+4);
-						  if(i == 1){
-							  o = comparacion(movex2,xx2[n3],movex);
-							  if (o == 1){
-								  state = 1;
-							  }
-							  o = comparacion(movex2,xx2[n3],movex+g);
-							  if (o == 1){
-								  state = 1;
-							  }
-						  }
-					  }
-					  c = 0;
-				  }
-				  movey += vj1;
-				  //linea+=4;
-				  //V_line(originx,originy,linea,0xFFFF);
-				  FillRect(movex,movey-vj1,2,vj1,0x0000);
-				  FillRect(movex+2,movey-vj1,2,vj1,rastroj1);
-				  FillRect(movex+4,movey-vj1,1,vj1,0xFFFF);
-				  FillRect(movex+5,movey-vj1,2,vj1,rastroj1);
-				  FillRect(movex+7,movey-vj1,2,vj1,0x0000);
-			  }
-	  //////////////////////////////////////////////////////////////////////////////////////////////////////
-			  if (derecha == 2){
-				  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
-				  LCD_Bitmap(movex+pr+1,movey,18,9,moto_derecha);
-				  int8_t oi = 0;
-				  oi = d_posicion3(xx, n1, movex+l,movex+l+vj1);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = yi[oi];
-					  f = yf[oi];
-					  oi = comparacion(i,f,movey);
-					  iio = comparacion(i,f,movey+g);
-					  if(oi == 1 || iio == 1){
-						  state = 0;
-					  }
-				  }
-				  oi = d_posicion3(xx2, n3, movex+l,movex+l+vj1);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = yi2[oi];
-					  f = yf2[oi];
-					  oi = comparacion(i,f,movey);
-					  iio = comparacion(i,f,movey+g);
-					  if(oi == 1 || iio == 1){
-						  state = 0;
-					  }
-				  }
-
-
-				  //COLISION JUGADOR QUE SE MUEVE
-				  if(arriba2 == 2){
-					  io = comparacion(movey2,movey2-vj2,movey+4);
-					  if(io == 1){
-						  io = comparacion(movex+l,xx[n1],movex2);
-						  if(io == 1){
-							  state = 5;
-						  }
-						  io = comparacion(movex+l,xx[n1],movex2+g);
-						  if(io == 1){
-							  state = 5;
-						  }
-					  }
-				  }
-				  if(abajo2 == 2){
-					  io = comparacion(movey2+l,movey2+l+vj2,movey+4);
-					  if(io == 1){
-						  io = comparacion(movex+l,xx[n1],movex2);
-						  if(io == 1){
-							  state = 5;
-						  }
-						  io = comparacion(movex+l,xx[n1],movex2+g);
-						  if(io == 1){
-							  state = 5;
-						  }
-					  }
-				  }
-				  if(c == 1){
-					  int8_t i=0;
-					  uint8_t o=0;
-					  i = d_posicion3(xx,n1,movex+mm,movex+l);
-					  if(i != -1){
-						  o = comparacion(yf[i], yi[i], movey);
-						  if (o == 1){
-							  state = 0;
-						  }
-						  o = comparacion(yf[i], yi[i], movey+g);
-						  if(o==1){
-							  state = 0;
-						  }
-					  }
-					  i = d_posicion3(xx2,n3,movex+mm,movex+l);
-					  if(i != -1){
-						  o = comparacion(yf2[i], yi2[i], movey);
-						  if (o == 1){
-							  state = 0;
-						  }
-						  o = comparacion(yf2[i], yi2[i], movey+g);
-						  if(o==1){
-							  state = 0;
-						  }
-					  }
-					  if(arriba2 == 2){
-						  i = comparacion(movex+mm,movex+l,movex2+4);
-						  if(i == 1){
-							  o = comparacion(movey2,yy2[n4],movey);
-							  if(o == 1){
-								  state = 0;
-							  }
-							  o = comparacion(movey2,yy2[n4],movey+g);
-							  if(o == 1){
-								  state = 0;
-							  }
-						  }
-					  }
-					  if(abajo2 == 2){
-						  i = comparacion(movex+mm,movex+l,movex2+4);
-						  if(i == 1){
-							  o = comparacion(movey2+l,yy2[n4],movey);
-							  if(o == 1){
-								  state = 0;
-							  }
-							  o = comparacion(movey2+l,yy2[n4],movey+g);
-							  if(o == 1){
-								  state = 0;
-							  }
-						  }
-					  }
-					  c = 0;
-				  }
-				  movex += vj1;
-				  //H_line(originx,originy,linea,0xFFFF);
-				  FillRect(movex-vj1,movey,vj1,2,0x0000);
-				  FillRect(movex-vj1,movey+2,vj1,2,rastroj1);
-				  FillRect(movex-vj1,movey+4,vj1,1,0xFFFF);
-				  FillRect(movex-vj1,movey+5,vj1,2,rastroj1);
-				  FillRect(movex-vj1,movey+7,vj1,2,0x0000);
-			  }
-	  ////////////////////////////////////////////////////////////////////////////////////////////////////
-			  if (izquierda == 2){
-				  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
-				  LCD_Bitmap(movex+pr,movey,18,9,moto_izquierda);
-				  int8_t oi = 0;
-				  oi = d_posicion3(xx, n1, movex,movex-vj1);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = yi[oi];
-					  f = yf[oi];
-					  oi = comparacion(i,f,movey);
-					  iio = comparacion(i,f,movey+g);
-					  if(oi == 1 || iio == 1){
-						  state = 0;
-					  }
-				  }
-				  oi = d_posicion3(xx2, n3, movex,movex-vj1);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = yi2[oi];
-					  f = yf2[oi];
-					  oi = comparacion(i,f,movey);
-					  iio = comparacion(i,f,movey+g);
-					  if(oi == 1 || iio == 1){
-						  state = 0;
-					  }
-				  }
-				  //COLISION JUGADOR QUE SE MUEVE
-				  if(arriba2 == 2){
-					  io = comparacion(movey2,movey2+vj2,movey+4);
-						  if(io == 1){
-							  io = comparacion(movex,xx[n1],movex2);
-							  if(io == 1){
-								  state = 5;
-							  }
-							  io = comparacion(movex,xx[n1],movex2+g);
-							  if(io == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-
-				  if(abajo2 == 2){
-					  io = comparacion(movey2+l,movey2+l+vj2,movey+4);
-						  if(io == 1){
-							  io = comparacion(movex,xx[n1],movex2);
-							  if(io == 1){
-								  state = 5;
-							  }
-							  io = comparacion(movex,xx[n1],movex2+g);
-							  if(io == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-				  if(c == 1){
-					  int8_t i=0;
-					  uint8_t o=0;
-					  i = d_posicion3(xx,n1,movex,movex+l-mm);
-					  if(i != -1){
-						  o = comparacion(yf[i], yi[i], movey);
-						  if (o == 1){
-							  state = 0;
-						  }
-						  o = comparacion(yf[i], yi[i], movey+g);
-						  if(o==1){
-							  state = 0;
-						  }
-					  }
-					  i = d_posicion3(xx2,n3,movex,movex+l-mm);
-					  if(i != -1){
-						  o = comparacion(yf2[i], yi2[i], movey);
-						  if (o == 1){
-							  state = 0;
-						  }
-						  o = comparacion(yf2[i], yi2[i], movey+g);
-						  if(o==1){
-							  state = 0;
-						  }
-					  }
-					  if(arriba2 == 2){
-						  i = comparacion(movex,movex+l-mm,movex2+4);
-						  if(i == 1){
-							  o = comparacion(movey2,yy2[n4],movey);
-							  if(o == 1){
-								  state = 0;
-							  }
-							  o = comparacion(movey2,yy2[n4],movey+g);
-							  if(o == 1){
-								  state = 0;
-							  }
-						  }
-					  }
-					  if(abajo2 == 2){
-						  i = comparacion(movex,movex+l-mm,movex2+4);
-						  if(i == 1){
-							  o = comparacion(movey2+l,yy2[n4],movey);
-							  if(o == 1){
-								  state = 0;
-							  }
-							  o = comparacion(movey2+l,yy2[n4],movey+g);
-							  if(o == 1){
-								  state = 0;
-							  }
-						  }
-					  }
-					  c = 0;
-				  }
-				  movex -= vj1;
-				  //linea+=4;
-				  //H_line(movex+l,originy,linea,0xFFFF);
-				  FillRect(movex+l,movey,vj1,2,0x0000);
-				  FillRect(movex+l,movey+2,vj1,2,rastroj1);
-				  FillRect(movex+l,movey+4,vj1,1,0xFFFF);
-				  FillRect(movex+l,movey+5,vj1,2,rastroj1);
-				  FillRect(movex+l,movey+7,vj1,2,0x0000);
-
-			  }
-			  //******************************************************************************
-			  //******************************JUGADOR 2***************************************
-			  //*******************************************************************************
-			  if (arriba2 == 2){
-				  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
-				  LCD_Bitmap(movex2,movey2+pr+1,9,18,moto_arriba);
-				  int8_t oi = 0;
-				  oi = d_posicion3(yy, n2, movey2,movey2-vj2);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = xi[oi];
-					  f = xf[oi];
-					  oi = comparacion(i,f,movex2);
-					  iio = comparacion(i,f,movex2+g);
-					  if(oi == 1 || iio == 1){
-						  state = 5;
-					  }
-				  }
-				  oi = d_posicion3(yy2, n4, movey2,movey2-vj2);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = xi2[oi];
-					  f = xf2[oi];
-					  oi = comparacion(i,f,movex2);
-					  iio = comparacion(i,f,movex2+g);
-					  if(oi == 1 || iio == 1){
-						  state = 5;
-					  }
-				  }
-
-				  //COLISION CUANDO EL JUGADOR SE MUEVE
-				  if(izquierda == 2){
-					  io = comparacion(movex,movex-(vj1),movex2+4);
-					  if(io == 1){
-						  io = comparacion(movey2, yy2[n4], movey);
-						  if(io == 1){
-							  state = 0;
-							  //FillRect(movex+4,movey2,0xFE20);
-						  }
-
-						  io = comparacion(movey2, yy2[n4], movey+g);
-						  if(io == 1){
-							  state = 0;
-						  }
-					  }
-				  }
-				  if(derecha == 2){
-					  io = comparacion(movex+l+vj1,movex+l,movex2+4);
-					  if(io == 1){
-						  io = comparacion(movey2, yy2[n4], movey);
-						  if(io == 1){
-							  state = 0;
-						  }
-						  io = comparacion(movey2,yy2[n4],movey+g);
-						  if(io == 1){
-							  state = 0;
-						  }
-					  }
-
-				  }
-				  if(c == 1){
-					  int8_t i=0;
-					  uint8_t o=0;
-					  i = d_posicion3(yy,n2,movey2+l-mm,movey2);
-					  if(i != -1){
-						  o = comparacion(xf[i], xi[i], movex2);
-						  if (o == 1){
-							  state = 5;
-						  }
-						  o = comparacion(xf[i], xi[i], movex2+g);
-						  if(o==1){
-							  state = 5;
-						  }
-					  }
-					  i = d_posicion3(yy2,n4,movey2+l-mm,movey2);
-					  if(i != -1){
-						  o = comparacion(xf2[i], xi2[i], movex2);
-						  if (o == 1){
-							  state = 5;
-						  }
-						  o = comparacion(xf2[i], xi2[i], movex2+g);
-						  if(o==1){
-							  state = 5;
-						  }
-					  }
-					  if(izquierda == 2){
-						  i = comparacion(movey2,movey2+l-mm,movey+4);
-						  if(i == 1){
-							  o = comparacion(movex,xx[n1],movex2);
-							  if (o == 1){
-								  state = 5;
-							  }
-							  o = comparacion(movex,xx[n1],movex2+g);
-							  if (o == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-					  if(derecha == 2){
-						  i = comparacion(movey2,movey2+l-mm,movey+4);
-						  if(i == 1){
-							  o = comparacion(movex+l,xx[n1],movex2);
-							  if(o == 1){
-								  state = 5;
-							  }
-							  o = comparacion(movex+l,xx[n1],movex2+g);
-							  if(o == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-					  c = 0;
-				  }
-				  movey2 -= vj2;
-				  //linea2+=4;
-				  //V_line(originx2,movey2+l,linea2,0xFFFF);
-				  FillRect(movex2,movey2+l,2,vj2,0x0000);
-				  FillRect(movex2+2,movey2+l,2,vj2,rastroj2);
-				  FillRect(movex2+4,movey2+l,1,vj2,0xFFFF);
-				  FillRect(movex2+5,movey2+l,2,vj2,rastroj2);
-				  FillRect(movex2+7,movey2+l,2,vj2,0x0000);
-				  if (c == 1){
-
-					  c = 0;
-				  }
-			  }
-	  //////////////////////////////////////////////////////////////////////////////////////////////////////
-			  if (abajo2 == 2){
-				  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
-				  LCD_Bitmap(movex2,movey2+pr,9,18,moto_abajo);
-				  int8_t oi = 0;
-				  oi = d_posicion3(yy, n2, movey2+l,movey2+l+vj2);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = xi[oi];
-					  f = xf[oi];
-					  oi = comparacion(i,f,movex2);
-					  iio = comparacion(i,f,movex2+g);
-					  if(oi == 1 || iio == 1){
-
-						  state = 5;
-					  }
-				  }
-				  oi = d_posicion3(yy2, n4, movey2+l,movey2+l+vj2);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = xi2[oi];
-					  f = xf2[oi];
-					  oi = comparacion(i,f,movex2);
-					  iio = comparacion(i,f,movex2+g);
-					  if(oi == 1 || iio == 1){
-						  FillRect(0,0,20,20,verde);
-						  HAL_Delay(1000);
-						  state = 5;
-					  }
-				  }
-
-				  if(derecha == 2){
-					  io = comparacion(movex+l+vj1,movex+l,movex2+4);
-					  if(io == 1){
-						  io = comparacion(movey2+l, yy2[n4], movey);
-						  if(io == 1){
-							  state = 0;
-							  //FillRect(movex+4,movey2,0xFE20);
-						  }
-						  io = comparacion(movey2+l, yy2[n4], movey+g);
-						  if(io == 1){
-							  state = 0;
-							  //FillRect(movex+4,movey2,0xFE20);
-						  }
-					  }
-				  }
-				  if(izquierda == 2){
-					  io = comparacion(movex,movex-vj1,movex2+4);
-					  if(io == 1){
-						  io = comparacion(movey2+l,yy2[n4],movey);
-						  if(io == 1){
-							  state = 0;
-						  }
-						  io = comparacion(movey2+l,yy2[n4],movey+g);
-						  if(io == 1){
-							  state = 0;
-						  }
-					  }
-				  }
-				  movey2 += vj2;
-				  if(c == 1){
-					  int8_t i;
-					  uint8_t o;
-					  i = d_posicion3(yy,n2,movey2+mm,movey2+l);
-					  if(i != -1){
-						  o = comparacion(xf[i], xi[i], movex2);
-						  if (o == 1){
-							  state = 5;
-						  }
-						  o = comparacion(xf[i], xi[i], movex2+g);
-						  if(o==1){
-							  state = 5;
-						  }
-					  }
-					  i = d_posicion3(yy2,n4,movey2+mm,movey2+l);
-					  if(i != -1){
-						  o = comparacion(xf2[i], xi2[i], movex2);
-						  if (o == 1){
-							  state = 5;
-						  }
-						  o = comparacion(xf2[i], xi2[i], movex2+g);
-						  if(o==1){
-							  state = 5;
-						  }
-					  }
-					  if(izquierda == 2){
-						  i = comparacion(movey2+mm,movey2+l,movey+4);
-						  if(i == 1){
-							  o = comparacion(movex,xx[n1],movex2);
-							  if (o == 1){
-								  state = 5;
-							  }
-							  o = comparacion(movex,xx[n1],movex2+g);
-							  if (o == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-					  if(derecha == 2){
-						  i = comparacion(movey2+mm,movey2+l,movey+4);
-						  if(i == 1){
-							  o = comparacion(movex+l,xx[n1],movex2);
-							  if(o == 1){
-								  state = 5;
-							  }
-							  o = comparacion(movex+l,xx[n1],movex2+g);
-							  if(o == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-					  c = 0;
-				  }
-				  //linea2+=4;
-				  //V_line(originx2,originy2,linea2,0xFFFF);
-				  FillRect(movex2,movey2-4,2,vj2,0x0000);
-				  FillRect(movex2+2,movey2-4,2,vj2,rastroj2);
-				  FillRect(movex2+4,movey2-4,1,vj2,0xFFFF);
-				  FillRect(movex2+5,movey2-4,2,vj2,rastroj2);
-				  FillRect(movex2+7,movey2-4,2,vj2,0x0000);
-			  }
-	  /////////////////////////////////////////////////////////////////////////////////////////////////////
-			  if (derecha2 == 2){
-				  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
-				  LCD_Bitmap(movex2+pr+1,movey2,18,9,moto_derecha);
-				  int8_t oi = 0;
-				  oi = d_posicion3(xx, n1, movex2+l,movex2+l+vj2);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = yi[oi];
-					  f = yf[oi];
-					  oi = comparacion(i,f,movey2);
-					  iio = comparacion(i,f,movey2+g);
-					  if(oi == 1 || iio == 1){
-						  state = 5;
-					  }
-				  }
-				  oi = d_posicion3(xx2, n3, movex2+l,movex2+l+vj2);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = yi2[oi];
-					  f = yf2[oi];
-					  oi = comparacion(i,f,movey2);
-					  iio = comparacion(i,f,movey2+g);
-					  if(oi == 1 || iio == 1){
-						  state = 5;
-					  }
-				  }
-
-				  //COLISION JUGADOR QUE SE MUEVE
-				  if(arriba == 2){
-					  io = comparacion(movey,movey-vj1,movey2+4);
-					  if(io == 1){
-						  io = comparacion(movex2+l,xx2[n3],movex);
-						  if(io == 1){
-							  state = 0;
-						  }
-						  io = comparacion(movex2+l,xx2[n3],movex+g);
-						  if(io == 1){
-							  state = 0;
-						  }
-					  }
-				  }
-				  if(abajo == 2){
-					  io = comparacion(movey+l,movey+l+vj1+1,movey2+4);
-					  if(io == 1){
-						  io = comparacion(movex2+l,xx2[n3],movex);
-						  if(io == 1){
-							  state = 0;
-						  }
-						  io = comparacion(movex2+l,xx2[n3],movex+g);
-						  if(io == 1){
-							  state = 0;
-						  }
-					  }
-				  }
-				  if(c == 1){
-					  int8_t i=0;
-					  uint8_t o=0;
-					  i = d_posicion3(xx,n1,movex2+mm,movex2+l);
-					  if(i != -1){
-						  o = comparacion(yf[i], yi[i], movey2);
-						  if (o == 1){
-							  state = 5;
-						  }
-						  o = comparacion(yf[i], yi[i], movey2+g);
-						  if(o==1){
-							  state = 5;
-						  }
-					  }
-					  i = d_posicion3(xx2,n3,movex2+mm,movex2+l);
-					  if(i != -1){
-						  o = comparacion(yf2[i], yi2[i], movey2);
-						  if (o == 1){
-							  state = 5;
-						  }
-						  o = comparacion(yf2[i], yi2[i], movey2+g);
-						  if(o==1){
-							  state = 5;
-						  }
-					  }
-					  if(arriba == 2){
-						  i = comparacion(movex2+mm,movex2+l,movex+4);
-						  if(i == 1){
-							  o = comparacion(movey,yy[n2],movey2);
-							  if(o == 1){
-								  state = 5;
-							  }
-							  o = comparacion(movey,yy[n2],movey2+g);
-							  if(o == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-					  if(abajo == 2){
-						  i = comparacion(movex2+mm,movex2+l,movex+4);
-						  if(i == 1){
-							  o = comparacion(movey+l,yy[n2],movey2);
-							  if(o == 1){
-								  state = 5;
-							  }
-							  o = comparacion(movey+l,yy[n2],movey2+g);
-							  if(o == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-					  c = 0;
-				  }
-				  movex2 += vj2;
-				  //linea2+=4;
-				  //H_line(originx2,originy2,linea2,0xFFFF);
-				  FillRect(movex2-4,movey2,vj2,2,0x0000);
-				  FillRect(movex2-4,movey2+2,vj2,2,rastroj2);
-				  FillRect(movex2-4,movey2+4,vj2,1,0xFFFF);
-				  FillRect(movex2-4,movey2+5,vj2,2,rastroj2);
-				  FillRect(movex2-4,movey2+7,vj2,2,0x0000);
-			  }
-	  ///////////////////////////////////////////////////////////////////////////////////////////////////
-			  if (izquierda2 == 2){
-				  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
+			  if(izquierda2 == 2){
 				  LCD_Bitmap(movex2+pr,movey2,18,9,moto_izquierda);
-				  int8_t oi = 0;
-				  oi = d_posicion3(xx, n1, movex2,movex2-vj2);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = yi[oi];
-					  f = yf[oi];
-					  oi = comparacion(i,f,movey2);
-					  iio = comparacion(i,f,movey2+g);
-					  if(oi == 1 || iio == 1){
-						  state = 5;
-					  }
-				  }
-				  oi = d_posicion3(xx2, n3, movex2,movex2+vj2);
-				  if (oi != -1){
-					  //FillRect(288,0,32,300,0xF800);
-					  //HAL_Delay(100);
-					  //illRect(288,0,32,300,0x630C);
-					  uint8_t i;
-					  uint8_t f;
-					  uint8_t iio;
-
-					  i = yi2[oi];
-					  f = yf2[oi];
-					  oi = comparacion(i,f,movey2);
-					  iio = comparacion(i,f,movey2+g);
-					  if(oi == 1 || iio == 1){
-						  state = 5;
-					  }
-				  }
-
-				  //COLISION JUGADOR QUE SE MUEVE
-				  if(arriba == 2){
-					  io = comparacion(movey,movey+vj1,movey2+4);
-						  if(io == 1){
-							  io = comparacion(movex2,xx2[n3],movex);
-							  if(io == 1){
-								  state = 0;
-							  }
-							  io = comparacion(movex2,xx2[n3],movex+g);
-							  if(io == 1){
-								  state = 0;
-							  }
-						  }
-					  }
-
-				  if(abajo == 2){
-					  io = comparacion(movey+l,movey+l+vj1,movey2+4);
-						  if(io == 1){
-							  io = comparacion(movex2,xx2[n3],movex);
-							  if(io == 1){
-								  state = 0;
-							  }
-							  io = comparacion(movex2,xx2[n3],movex+g);
-							  if(io == 1){
-								  state = 0;
-							  }
-						  }
-					  }
-				  if(c == 1){
-					  int8_t i=0;
-					  uint8_t o=0;
-					  i = d_posicion3(xx,n1,movex2,movex2+l-mm);
-					  if(i != -1){
-						  o = comparacion(yf[i], yi[i], movey);
-						  if (o == 1){
-							  state = 5;
-						  }
-						  o = comparacion(yf[i], yi[i], movey+g);
-						  if(o==1){
-							  state = 5;
-						  }
-					  }
-					  i = d_posicion3(xx2,n3,movex2,movex2+l-mm);
-					  if(i != -1){
-						  o = comparacion(yf2[i], yi2[i], movey);
-						  if (o == 1){
-							  state = 5;
-						  }
-						  o = comparacion(yf2[i], yi2[i], movey+g);
-						  if(o==1){
-							  state = 5;
-						  }
-					  }
-					  if(arriba == 2){
-						  i = comparacion(movex2,movex2+l-mm,movex+4);
-						  if(i == 1){
-							  o = comparacion(movey,yy[n2],movey2);
-							  if(o == 1){
-								  state = 5;
-							  }
-							  o = comparacion(movey,yy[n2],movey2+g);
-							  if(o == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-					  if(abajo == 2){
-						  i = comparacion(movex2,movex2+l-mm,movex+4);
-						  if(i == 1){
-							  o = comparacion(movey+l,yy[n2],movey2);
-							  if(o == 1){
-								  state = 5;
-							  }
-							  o = comparacion(movey+l,yy[n2],movey2+g);
-							  if(o == 1){
-								  state = 5;
-							  }
-						  }
-					  }
-					  c = 0;
-				  }
-				  movex2 -= vj2;
-				  //linea2+=4;
-				  //H_line(movex2+l,originy2,linea2,0xFFFF);
-				  FillRect(movex2+l,movey2,vj2,2,0x0000);
-				  FillRect(movex2+l,movey2+2,vj2,2,rastroj2);
-				  FillRect(movex2+l,movey2+4,vj2,1,0xFFFF);
-				  FillRect(movex2+l,movey2+5,vj2,2,rastroj2);
-				  FillRect(movex2+l,movey2+7,vj2,2,0x0000);
 
 			  }
-		  }while(state == 3);
-	  }else if(state == 5){
-		  char buffer[4];
-		  transmit_uart("3");
-		  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)0x1112
-		  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)0xFE20
-		  if(derecha2 == 2){
-			  LCD_Bitmap(movex2+pr,movey2,18,9,moto_derecha);
-		  }
-		  if(izquierda2 == 2){
-			  LCD_Bitmap(movex2+pr,movey2,18,9,moto_izquierda);
-		  }
-		  if(abajo2 == 2){
-			  LCD_Bitmap(movex2,movey2+pr,9,18,moto_abajo);
-		  }
-		  if(arriba2 == 2){
-			  LCD_Bitmap(movex2,movey2+pr,9,18,moto_arriba);
-		  }
-		  HAL_Delay(2000);
-		  LCD_Clear(0x0000);
-		  LCD_Print("Fin Del Juego",50,90,2,0xFFFF,0x0000);
-		  LCD_Print("Jugador 1 gana", 40,110,2,rastroj1,0x0000);
-		  gj1++;
-		  sprintf(buffer, "%u",gj1);
-		  LCD_Print(buffer, 145,130,2,rastroj1,0x0000);
-		  LCD_Print("-", 160,130,2,0xFFFF,0x0000);
-		  sprintf(buffer, "%u",gj2);
-		  if(gj2 == 0){
-			  LCD_Print("0",175,130,2,rastroj2,0x0000);
-		  }else{
-			  LCD_Print(buffer,175,130,2,rastroj2,0x0000);
-		  }
+			  if(abajo2 == 2){
+				  LCD_Bitmap(movex2,movey2+pr,9,18,moto_abajo);
 
-		  do{
-			  HAL_Delay(50);
-		  }while(state == 5);
-	  }else if(state == 6){//menu
-		  transmit_uart("1");
-		  gj1 = -1;
-		  gj2 = -1;
-
-		  LCD_Bitmap(0,0,320,180,menu2);
-		  //LCD_Clear(0x0000);
-		  //LCD_Print("Menu lol",50,90,2,0xFFFF,0x0000);
-		  while(state == 6){//menu
-
-			  HAL_Delay(50);
-		  }
-	  }else if(state == 7){
-		  LCD_Clear(0x0000);
-		  FillRect(65,60,50,50,azul);
-		  FillRect(135,60,50,50,verde);
-		  FillRect(205,60,50,50,naranja);
-		  FillRect(65,130,50,50,amarillo);
-		  FillRect(135,130,50,50,rojo);
-		  FillRect(205,130,50,50,rosa);
-		  j1[1] = 1;
-		  j2[1] = 4;
-		  j1[2] = 0;
-		  j2[2] = 0;
-		  do{
-			  if(j1[2] == 0){
-				  if(j1[1] == 1){
-					  LCD_Print("J1",75,70,2,0xFFFF,azul);
-					  j1borrar();
-				  }else if(j1[1] == 2){
-					  LCD_Print("J1",145,70,2,0xFFFF,verde);
-					  j1borrar();
-				  }else if(j1[1] == 3){
-					  LCD_Print("J1",215,70,2,0xFFFF,naranja);
-					  j1borrar();
-				  }else if(j1[1] == 4){
-					  LCD_Print("J1",75,140,2,0xFFFF,amarillo);
-					  j1borrar();
-				  }else if(j1[1] == 5){
-					  LCD_Print("J1",145,140,2,0xFFFF,rojo);
-					  j1borrar();
-				  }else if(j1[1] == 6){
-					  LCD_Print("J1",215,140,2,0xFFFF,rosa);
-					  j1borrar();
-				  }
-			  }else if(j1[2] == 1){
-				  LCD_Print("J1 Listo",75,190,1,0xFFFF,0x0000);
 			  }
-			  if(j2[2] == 0){
-				  if(j2[1] == 1){
-					  LCD_Print("J2",75,70,2,0xFFFF,azul);
-					  j2borrar();
-				  }else if(j2[1] == 2){
-					  LCD_Print("J2",145,70,2,0xFFFF,verde);
-					  j2borrar();
-				  }else if(j2[1] == 3){
-					  LCD_Print("J2",215,70,2,0xFFFF,naranja);
-					  j2borrar();
-				  }else if(j2[1] == 4){
-					  LCD_Print("J2",75,140,2,0xFFFF,amarillo);
-					  j2borrar();
-				  }else if(j2[1] == 5){
-					  LCD_Print("J2",145,140,2,0xFFFF,rojo);
-					  j2borrar();
-				  }else if(j2[1] == 6){
-					  LCD_Print("J2",215,140,2,0xFFFF,rosa);
-					  j2borrar();
-				  }
-			  }else if(j2[2] == 1){
-				  LCD_Print("J2 Listo",200,190,1,0xFFFF,0x0000);
+			  if(arriba2 == 2){
+				  LCD_Bitmap(movex2,movey2+pr,9,18,moto_arriba);
+
 			  }
-			  if(j2[2] == 1 && j1[2] == 1){
-				  state = 8;
+	  		  HAL_Delay(2000);
+	  		  LCD_Clear(0x0000);
+	  		  LCD_Print("Fin Del Juego",50,90,2,0xFFFF,0x0000);
+	  		  LCD_Print("Jugador 2 gana", 40,110,2,rastroj2,0x0000);
+	  		  gj2++;
+	  		  sprintf(buffer, "%u",gj2);
+	  		  LCD_Print(buffer, 175,130,2,rastroj2,0x0000);
+	  		  LCD_Print("-", 160,130,2,0xFFFF,0x0000);
+	  		  sprintf(buffer, "%u",gj1);
+	  		  if(gj2 == 0){
+	  			  LCD_Print("0",145,130,2,rastroj1,0x0000);
+	  		  }else{
+	  			  LCD_Print(buffer,145,130,2,rastroj1,0x0000);
+	  		  }
+
+	  		  do{
+	  			  HAL_Delay(50);
+	  		  }while(state == 0);
+	  	  }else if(state == 2){
+
+	  		  vaciar_listas();
+	  		  movex = 0;
+	  		  movey = 0;
+
+	  		  movex2 = 0;
+	  		  movey2 = 240-g;
+	  		  x = l;
+	  		  y = g;
+	  		  x2 = l;
+	  		  y2 = g;
+	  		  FillRect(35,90,230,100,0x0000);//para tapar el "Fin del juego"
+	  		  FillRect(255,0,2,240,azul);
+	  		  FillRect(257,0,1,240,0xFFFF);
+	  		  FillRect(258,0,2,240,azul);
+	  		  arriba = 0;
+	  		  abajo = 0;
+	  		  derecha = 2;
+	  		  izquierda = 0;
+	  		  arriba2 = 0;
+	  		  abajo2 = 0;
+	  		  derecha2 = 2;
+	  		  izquierda2 = 0;
+	  		  HAL_Delay(100);
+	  		  state = 3;
+	  	  }else if(state == 3){
+	  		  transmit_uart("2");
+
+	  		  do{
+	  			  HAL_Delay(50);
+
+	  			  yy2[0] = movey2+4;
+	  			  if(x == l){
+	  				  if(movex < 0 || movex > 255-l){
+	  					  state = 0;
+	  				  }
+	  			  }else if(x == g){
+	  				  if(movey < 0 || movey > 240-l){
+	  					  state = 0;
+	  				  }
+	  			  }
+	  			  if(x2 == l){
+	  				  if(movex2 < 0 || movex2 > 255-l){
+	  					  //FillRect(0,0,30,60,rosa);
+	  					  state = 5;
+	  				  }
+	  			  }else if(x2 == g){
+	  				  if(movey2 < 0 || movey2 > 240-l){
+	  					  //FillRect(0,0,30,60,rosa);
+	  					  state = 5;
+	  				  }
+	  			  }
+
+
+	  			  //*****************************************************************************
+	  			  //******************************JUGADOR 1**************************************
+	  			  //*****************************************************************************
+
+	  			  if (arriba == 2){
+	  				  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
+	  				  LCD_Bitmap(movex,movey+pr,9,18,moto_arriba);
+	  				  //COLISION DE LOS RASTROS QUE DEJA EL JUGADOR
+	  				  int8_t oi = 0;
+	  				  oi = d_posicion3(yy, n2, movey,movey-vj1);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = xi[oi];
+	  					  f = xf[oi];
+	  					  oi = comparacion(i,f,movex);
+	  					  iio = comparacion(i,f,movex+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 0;
+	  					  }
+	  				  }
+	  				  oi = d_posicion3(yy2, n4, movey,movey-vj1);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = xi2[oi];
+	  					  f = xf2[oi];
+	  					  oi = comparacion(i,f,movex);
+	  					  iio = comparacion(i,f,movex+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 0;
+	  					  }
+	  				  }
+
+
+	  				  //COLISION CUANDO EL JUGADOR SE MUEVE
+	  				  if(izquierda2 == 2){
+	  					  io = comparacion(movex2,movex2-(vj2),movex+4);
+	  					  if(io == 1){
+	  						  //FillRect(255,0,65,300,0xFFFF);
+	  						  //HAL_Delay(100);
+	  						  //FillRect(255,0,65,300,0x630C);
+	  						  io = comparacion(movey, yy[n2], movey2);
+	  						  if(io == 1){
+	  							  state = 5;
+	  							  //FillRect(movex+4,movey2,0xFE20);
+	  						  }
+
+	  						  io = comparacion(movey, yy[n2], movey2+g);
+	  						  if(io == 1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  				  }
+	  				  if(derecha2 == 2){
+	  					  io = comparacion(movex2+l+vj2,movex2+l,movex+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movey, yy[n2], movey2);
+	  						  if(io == 1){
+	  							  state = 5;
+	  						  }
+	  						  io = comparacion(movey,yy[n2],movey+g);
+	  						  if(io == 1){
+	  							  state = 5;
+	  						  }
+	  					  }
+
+	  				  }
+	  				  //CUANDO EL JUGADOR CRUZA
+	  				  if(c == 1){
+	  					  int8_t i=0;
+	  					  uint8_t o=0;
+	  					  i = d_posicion3(yy,n2,movey+l-mm,movey);
+	  					  if(i != -1){
+	  						  o = comparacion(xf[i], xi[i], movex);
+	  						  if (o == 1){
+	  							  state = 0;
+	  						  }
+	  						  o = comparacion(xf[i], xi[i], movex+g);
+	  						  if(o==1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  					  i = d_posicion3(yy2,n4,movey+l-mm,movey);
+	  					  if(i != -1){
+	  						  o = comparacion(xf2[i], xi2[i], movex);
+	  						  if (o == 1){
+	  							  state = 0;
+	  						  }
+	  						  o = comparacion(xf2[i], xi2[i], movex+g);
+	  						  if(o==1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  					  if(izquierda2 == 2){
+	  						  i = comparacion(movey,movey+l-mm,movey2+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movex2,xx2[n3],movex);
+	  							  if (o == 1){
+	  								  state = 0;
+	  							  }
+	  							  o = comparacion(movex2,xx2[n3],movex+g);
+	  							  if (o == 1){
+	  								  state = 0;
+	  							  }
+	  						  }
+	  					  }
+	  					  if(derecha2 == 2){
+	  						  i = comparacion(movey,movey+l-mm,movey2+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movex2+l,xx2[n3],movex);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  							  o = comparacion(movex2+l,xx2[n3],movex+g);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  						  }
+	  					  }
+
+
+	  					  c = 0;
+	  				  }
+	  				  //MOVIMIENTO DEL JUGADOR
+	  				  movey -= vj1;
+	  				  //RASTRO
+	  				  FillRect(movex,movey+l,2,vj1,0x0000);
+	  				  FillRect(movex+2,movey+l,2,vj1,rastroj1);
+	  				  FillRect(movex+4,movey+l,1,vj1,0xFFFF);
+
+	  				  FillRect(movex+5,movey+l,2,vj1,rastroj1);
+	  				  FillRect(movex+7,movey+l,2,vj1,0x0000);
+
+	  			  }
+	  	  ///////////////////////////////////////////////////////////////////////////////////////////////////
+	  			  if (abajo == 2){
+	  				  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
+	  				  LCD_Bitmap(movex,movey+pr+1,9,18,moto_abajo);
+	  				  int8_t oi = 0;
+	  				  oi = d_posicion3(yy, n2, movey+l,movey+l+vj1);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = xi[oi];
+	  					  f = xf[oi];
+	  					  oi = comparacion(i,f,movex);
+	  					  iio = comparacion(i,f,movex+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 0;
+	  					  }
+	  				  }
+	  				  oi = d_posicion3(yy2, n4, movey+l,movey+l+vj1);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = xi2[oi];
+	  					  f = xf2[oi];
+	  					  oi = comparacion(i,f,movex);
+	  					  iio = comparacion(i,f,movex+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 0;
+	  					  }
+	  				  }
+
+
+	  				  if(derecha2 == 2){
+	  					  io = comparacion(movex2+l+vj2,movex2+l,movex+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movey+l, yy[n2], movey2);
+	  						  if(io == 1){
+	  							  state = 5;
+	  							  //FillRect(movex+4,movey2,0xFE20);
+	  						  }
+	  						  io = comparacion(movey+l, yy[n2], movey2+g);
+	  						  if(io == 1){
+	  							  state = 5;
+	  							  //FillRect(movex+4,movey2,0xFE20);
+	  						  }
+	  					  }
+	  				  }
+	  				  if(izquierda2 == 2){
+	  					  io = comparacion(movex2,movex2-vj2,movex+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movey+l,yy[n2],movey2);
+	  						  if(io == 1){
+	  							  state = 5;
+	  						  }
+	  						  io = comparacion(movey+l,yy[n2],movey2+g);
+	  						  if(io == 1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  				  }
+	  				  //CUANDO EL JUGADOR CRUZA
+	  				  if(c == 1){
+	  					  int8_t i;
+	  					  uint8_t o;
+	  					  i = d_posicion3(yy,n2,movey+mm,movey+l);
+	  					  if(i != -1){
+	  						  o = comparacion(xf[i], xi[i], movex);
+	  						  if (o == 1){
+	  							  state = 0;
+	  						  }
+	  						  o = comparacion(xf[i], xi[i], movex+g);
+	  						  if(o==1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  					  i = d_posicion3(yy2,n4,movey+mm,movey+l);
+	  					  if(i != -1){
+	  						  o = comparacion(xf2[i], xi2[i], movex);
+	  						  if (o == 1){
+	  							  state = 0;
+	  						  }
+	  						  o = comparacion(xf2[i], xi2[i], movex+g);
+	  						  if(o==1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  					  if(derecha2 == 2){
+	  						  i = comparacion(movey+mm,movey+l,movey2+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movex2+l,xx2[n3],movex);
+	  							  if (o == 1){
+	  								  state = 0;
+	  							  }
+	  							  o = comparacion(movex2+l,xx2[n3],movex+g);
+	  							  if (o == 1){
+	  								  state = 0;
+	  							  }
+	  						  }
+	  					  }
+	  					  if(izquierda2 == 2){
+	  						  i = comparacion(movey+mm,movey+l,movey2+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movex2,xx2[n3],movex);
+	  							  if (o == 1){
+	  								  state = 1;
+	  							  }
+	  							  o = comparacion(movex2,xx2[n3],movex+g);
+	  							  if (o == 1){
+	  								  state = 1;
+	  							  }
+	  						  }
+	  					  }
+	  					  c = 0;
+	  				  }
+	  				  movey += vj1;
+	  				  //linea+=4;
+	  				  //V_line(originx,originy,linea,0xFFFF);
+	  				  FillRect(movex,movey-vj1,2,vj1,0x0000);
+	  				  FillRect(movex+2,movey-vj1,2,vj1,rastroj1);
+	  				  FillRect(movex+4,movey-vj1,1,vj1,0xFFFF);
+	  				  FillRect(movex+5,movey-vj1,2,vj1,rastroj1);
+	  				  FillRect(movex+7,movey-vj1,2,vj1,0x0000);
+	  			  }
+	  	  //////////////////////////////////////////////////////////////////////////////////////////////////////
+	  			  if (derecha == 2){
+	  				  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
+	  				  LCD_Bitmap(movex+pr+1,movey,18,9,moto_derecha);
+	  				  int8_t oi = 0;
+	  				  oi = d_posicion3(xx, n1, movex+l,movex+l+vj1);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = yi[oi];
+	  					  f = yf[oi];
+	  					  oi = comparacion(i,f,movey);
+	  					  iio = comparacion(i,f,movey+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 0;
+	  					  }
+	  				  }
+	  				  oi = d_posicion3(xx2, n3, movex+l,movex+l+vj1);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = yi2[oi];
+	  					  f = yf2[oi];
+	  					  oi = comparacion(i,f,movey);
+	  					  iio = comparacion(i,f,movey+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 0;
+	  					  }
+	  				  }
+
+
+	  				  //COLISION JUGADOR QUE SE MUEVE
+	  				  if(arriba2 == 2){
+	  					  io = comparacion(movey2,movey2-vj2,movey+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movex+l,xx[n1],movex2);
+	  						  if(io == 1){
+	  							  state = 5;
+	  						  }
+	  						  io = comparacion(movex+l,xx[n1],movex2+g);
+	  						  if(io == 1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  				  }
+	  				  if(abajo2 == 2){
+	  					  io = comparacion(movey2+l,movey2+l+vj2,movey+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movex+l,xx[n1],movex2);
+	  						  if(io == 1){
+	  							  state = 5;
+	  						  }
+	  						  io = comparacion(movex+l,xx[n1],movex2+g);
+	  						  if(io == 1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  				  }
+	  				  if(c == 1){
+	  					  int8_t i=0;
+	  					  uint8_t o=0;
+	  					  i = d_posicion3(xx,n1,movex+mm,movex+l);
+	  					  if(i != -1){
+	  						  o = comparacion(yf[i], yi[i], movey);
+	  						  if (o == 1){
+	  							  state = 0;
+	  						  }
+	  						  o = comparacion(yf[i], yi[i], movey+g);
+	  						  if(o==1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  					  i = d_posicion3(xx2,n3,movex+mm,movex+l);
+	  					  if(i != -1){
+	  						  o = comparacion(yf2[i], yi2[i], movey);
+	  						  if (o == 1){
+	  							  state = 0;
+	  						  }
+	  						  o = comparacion(yf2[i], yi2[i], movey+g);
+	  						  if(o==1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  					  if(arriba2 == 2){
+	  						  i = comparacion(movex+mm,movex+l,movex2+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movey2,yy2[n4],movey);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  							  o = comparacion(movey2,yy2[n4],movey+g);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  						  }
+	  					  }
+	  					  if(abajo2 == 2){
+	  						  i = comparacion(movex+mm,movex+l,movex2+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movey2+l,yy2[n4],movey);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  							  o = comparacion(movey2+l,yy2[n4],movey+g);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  						  }
+	  					  }
+	  					  c = 0;
+	  				  }
+	  				  movex += vj1;
+	  				  //H_line(originx,originy,linea,0xFFFF);
+	  				  FillRect(movex-vj1,movey,vj1,2,0x0000);
+	  				  FillRect(movex-vj1,movey+2,vj1,2,rastroj1);
+	  				  FillRect(movex-vj1,movey+4,vj1,1,0xFFFF);
+	  				  FillRect(movex-vj1,movey+5,vj1,2,rastroj1);
+	  				  FillRect(movex-vj1,movey+7,vj1,2,0x0000);
+	  			  }
+	  	  ////////////////////////////////////////////////////////////////////////////////////////////////////
+	  			  if (izquierda == 2){
+	  				  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
+	  				  LCD_Bitmap(movex+pr,movey,18,9,moto_izquierda);
+	  				  int8_t oi = 0;
+	  				  oi = d_posicion3(xx, n1, movex,movex-vj1);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = yi[oi];
+	  					  f = yf[oi];
+	  					  oi = comparacion(i,f,movey);
+	  					  iio = comparacion(i,f,movey+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 0;
+	  					  }
+	  				  }
+	  				  oi = d_posicion3(xx2, n3, movex,movex-vj1);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = yi2[oi];
+	  					  f = yf2[oi];
+	  					  oi = comparacion(i,f,movey);
+	  					  iio = comparacion(i,f,movey+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 0;
+	  					  }
+	  				  }
+	  				  //COLISION JUGADOR QUE SE MUEVE
+	  				  if(arriba2 == 2){
+	  					  io = comparacion(movey2,movey2+vj2,movey+4);
+	  						  if(io == 1){
+	  							  io = comparacion(movex,xx[n1],movex2);
+	  							  if(io == 1){
+	  								  state = 5;
+	  							  }
+	  							  io = comparacion(movex,xx[n1],movex2+g);
+	  							  if(io == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+
+	  				  if(abajo2 == 2){
+	  					  io = comparacion(movey2+l,movey2+l+vj2,movey+4);
+	  						  if(io == 1){
+	  							  io = comparacion(movex,xx[n1],movex2);
+	  							  if(io == 1){
+	  								  state = 5;
+	  							  }
+	  							  io = comparacion(movex,xx[n1],movex2+g);
+	  							  if(io == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+	  				  if(c == 1){
+	  					  int8_t i=0;
+	  					  uint8_t o=0;
+	  					  i = d_posicion3(xx,n1,movex,movex+l-mm);
+	  					  if(i != -1){
+	  						  o = comparacion(yf[i], yi[i], movey);
+	  						  if (o == 1){
+	  							  state = 0;
+	  						  }
+	  						  o = comparacion(yf[i], yi[i], movey+g);
+	  						  if(o==1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  					  i = d_posicion3(xx2,n3,movex,movex+l-mm);
+	  					  if(i != -1){
+	  						  o = comparacion(yf2[i], yi2[i], movey);
+	  						  if (o == 1){
+	  							  state = 0;
+	  						  }
+	  						  o = comparacion(yf2[i], yi2[i], movey+g);
+	  						  if(o==1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  					  if(arriba2 == 2){
+	  						  i = comparacion(movex,movex+l-mm,movex2+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movey2,yy2[n4],movey);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  							  o = comparacion(movey2,yy2[n4],movey+g);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  						  }
+	  					  }
+	  					  if(abajo2 == 2){
+	  						  i = comparacion(movex,movex+l-mm,movex2+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movey2+l,yy2[n4],movey);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  							  o = comparacion(movey2+l,yy2[n4],movey+g);
+	  							  if(o == 1){
+	  								  state = 0;
+	  							  }
+	  						  }
+	  					  }
+	  					  c = 0;
+	  				  }
+	  				  movex -= vj1;
+	  				  //linea+=4;
+	  				  //H_line(movex+l,originy,linea,0xFFFF);
+	  				  FillRect(movex+l,movey,vj1,2,0x0000);
+	  				  FillRect(movex+l,movey+2,vj1,2,rastroj1);
+	  				  FillRect(movex+l,movey+4,vj1,1,0xFFFF);
+	  				  FillRect(movex+l,movey+5,vj1,2,rastroj1);
+	  				  FillRect(movex+l,movey+7,vj1,2,0x0000);
+
+	  			  }
+	  			  //******************************************************************************
+	  			  //******************************JUGADOR 2***************************************
+	  			  //*******************************************************************************
+	  			  if (arriba2 == 2){
+	  				  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
+	  				  LCD_Bitmap(movex2,movey2+pr+1,9,18,moto_arriba);
+	  				  int8_t oi = 0;
+	  				  oi = d_posicion3(yy, n2, movey2,movey2-vj2);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = xi[oi];
+	  					  f = xf[oi];
+	  					  oi = comparacion(i,f,movex2);
+	  					  iio = comparacion(i,f,movex2+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 5;
+	  					  }
+	  				  }
+	  				  oi = d_posicion3(yy2, n4, movey2,movey2-vj2);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = xi2[oi];
+	  					  f = xf2[oi];
+	  					  oi = comparacion(i,f,movex2);
+	  					  iio = comparacion(i,f,movex2+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 5;
+	  					  }
+	  				  }
+
+	  				  //COLISION CUANDO EL JUGADOR SE MUEVE
+	  				  if(izquierda == 2){
+	  					  io = comparacion(movex,movex-(vj1),movex2+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movey2, yy2[n4], movey);
+	  						  if(io == 1){
+	  							  state = 0;
+	  							  //FillRect(movex+4,movey2,0xFE20);
+	  						  }
+
+	  						  io = comparacion(movey2, yy2[n4], movey+g);
+	  						  if(io == 1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  				  }
+	  				  if(derecha == 2){
+	  					  io = comparacion(movex+l+vj1,movex+l,movex2+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movey2, yy2[n4], movey);
+	  						  if(io == 1){
+	  							  state = 0;
+	  						  }
+	  						  io = comparacion(movey2,yy2[n4],movey+g);
+	  						  if(io == 1){
+	  							  state = 0;
+	  						  }
+	  					  }
+
+	  				  }
+	  				  if(c == 1){
+	  					  int8_t i=0;
+	  					  uint8_t o=0;
+	  					  i = d_posicion3(yy,n2,movey2+l-mm,movey2);
+	  					  if(i != -1){
+	  						  o = comparacion(xf[i], xi[i], movex2);
+	  						  if (o == 1){
+	  							  state = 5;
+	  						  }
+	  						  o = comparacion(xf[i], xi[i], movex2+g);
+	  						  if(o==1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  					  i = d_posicion3(yy2,n4,movey2+l-mm,movey2);
+	  					  if(i != -1){
+	  						  o = comparacion(xf2[i], xi2[i], movex2);
+	  						  if (o == 1){
+	  							  state = 5;
+	  						  }
+	  						  o = comparacion(xf2[i], xi2[i], movex2+g);
+	  						  if(o==1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  					  if(izquierda == 2){
+	  						  i = comparacion(movey2,movey2+l-mm,movey+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movex,xx[n1],movex2);
+	  							  if (o == 1){
+	  								  state = 5;
+	  							  }
+	  							  o = comparacion(movex,xx[n1],movex2+g);
+	  							  if (o == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+	  					  if(derecha == 2){
+	  						  i = comparacion(movey2,movey2+l-mm,movey+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movex+l,xx[n1],movex2);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  							  o = comparacion(movex+l,xx[n1],movex2+g);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+	  					  c = 0;
+	  				  }
+	  				  movey2 -= vj2;
+	  				  //linea2+=4;
+	  				  //V_line(originx2,movey2+l,linea2,0xFFFF);
+	  				  FillRect(movex2,movey2+l,2,vj2,0x0000);
+	  				  FillRect(movex2+2,movey2+l,2,vj2,rastroj2);
+	  				  FillRect(movex2+4,movey2+l,1,vj2,0xFFFF);
+	  				  FillRect(movex2+5,movey2+l,2,vj2,rastroj2);
+	  				  FillRect(movex2+7,movey2+l,2,vj2,0x0000);
+	  				  if (c == 1){
+
+	  					  c = 0;
+	  				  }
+	  			  }
+	  	  //////////////////////////////////////////////////////////////////////////////////////////////////////
+	  			  if (abajo2 == 2){
+	  				  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
+	  				  LCD_Bitmap(movex2,movey2+pr,9,18,moto_abajo);
+	  				  int8_t oi = 0;
+	  				  oi = d_posicion3(yy, n2, movey2+l,movey2+l+vj2);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = xi[oi];
+	  					  f = xf[oi];
+	  					  oi = comparacion(i,f,movex2);
+	  					  iio = comparacion(i,f,movex2+g);
+	  					  if(oi == 1 || iio == 1){
+
+	  						  state = 5;
+	  					  }
+	  				  }
+	  				  oi = d_posicion3(yy2, n4, movey2+l,movey2+l+vj2);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = xi2[oi];
+	  					  f = xf2[oi];
+	  					  oi = comparacion(i,f,movex2);
+	  					  iio = comparacion(i,f,movex2+g);
+	  					  if(oi == 1 || iio == 1){
+
+	  						  state = 5;
+	  					  }
+	  				  }
+
+	  				  if(derecha == 2){
+	  					  io = comparacion(movex+l+vj1,movex+l,movex2+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movey2+l, yy2[n4], movey);
+	  						  if(io == 1){
+	  							  state = 0;
+	  							  //FillRect(movex+4,movey2,0xFE20);
+	  						  }
+	  						  io = comparacion(movey2+l, yy2[n4], movey+g);
+	  						  if(io == 1){
+	  							  state = 0;
+	  							  //FillRect(movex+4,movey2,0xFE20);
+	  						  }
+	  					  }
+	  				  }
+	  				  if(izquierda == 2){
+	  					  io = comparacion(movex,movex-vj1,movex2+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movey2+l,yy2[n4],movey);
+	  						  if(io == 1){
+	  							  state = 0;
+	  						  }
+	  						  io = comparacion(movey2+l,yy2[n4],movey+g);
+	  						  if(io == 1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  				  }
+	  				  movey2 += vj2;
+	  				  if(c == 1){
+	  					  int8_t i;
+	  					  uint8_t o;
+	  					  i = d_posicion3(yy,n2,movey2+mm,movey2+l);
+	  					  if(i != -1){
+	  						  o = comparacion(xf[i], xi[i], movex2);
+	  						  if (o == 1){
+	  							  state = 5;
+	  						  }
+	  						  o = comparacion(xf[i], xi[i], movex2+g);
+	  						  if(o==1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  					  i = d_posicion3(yy2,n4,movey2+mm,movey2+l);
+	  					  if(i != -1){
+	  						  o = comparacion(xf2[i], xi2[i], movex2);
+	  						  if (o == 1){
+	  							  state = 5;
+	  						  }
+	  						  o = comparacion(xf2[i], xi2[i], movex2+g);
+	  						  if(o==1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  					  if(izquierda == 2){
+	  						  i = comparacion(movey2+mm,movey2+l,movey+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movex,xx[n1],movex2);
+	  							  if (o == 1){
+	  								  state = 5;
+	  							  }
+	  							  o = comparacion(movex,xx[n1],movex2+g);
+	  							  if (o == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+	  					  if(derecha == 2){
+	  						  i = comparacion(movey2+mm,movey2+l,movey+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movex+l,xx[n1],movex2);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  							  o = comparacion(movex+l,xx[n1],movex2+g);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+	  					  c = 0;
+	  				  }
+	  				  //linea2+=4;
+	  				  //V_line(originx2,originy2,linea2,0xFFFF);
+	  				  FillRect(movex2,movey2-4,2,vj2,0x0000);
+	  				  FillRect(movex2+2,movey2-4,2,vj2,rastroj2);
+	  				  FillRect(movex2+4,movey2-4,1,vj2,0xFFFF);
+	  				  FillRect(movex2+5,movey2-4,2,vj2,rastroj2);
+	  				  FillRect(movex2+7,movey2-4,2,vj2,0x0000);
+	  			  }
+	  	  /////////////////////////////////////////////////////////////////////////////////////////////////////
+	  			  if (derecha2 == 2){
+	  				  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
+	  				  LCD_Bitmap(movex2+pr+1,movey2,18,9,moto_derecha);
+	  				  int8_t oi = 0;
+	  				  oi = d_posicion3(xx, n1, movex2+l,movex2+l+vj2);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = yi[oi];
+	  					  f = yf[oi];
+	  					  oi = comparacion(i,f,movey2);
+	  					  iio = comparacion(i,f,movey2+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 5;
+	  					  }
+	  				  }
+	  				  oi = d_posicion3(xx2, n3, movex2+l,movex2+l+vj2);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = yi2[oi];
+	  					  f = yf2[oi];
+	  					  oi = comparacion(i,f,movey2);
+	  					  iio = comparacion(i,f,movey2+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 5;
+	  					  }
+	  				  }
+
+	  				  //COLISION JUGADOR QUE SE MUEVE
+	  				  if(arriba == 2){
+	  					  io = comparacion(movey,movey-vj1,movey2+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movex2+l,xx2[n3],movex);
+	  						  if(io == 1){
+	  							  state = 0;
+	  						  }
+	  						  io = comparacion(movex2+l,xx2[n3],movex+g);
+	  						  if(io == 1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  				  }
+	  				  if(abajo == 2){
+	  					  io = comparacion(movey+l,movey+l+vj1+1,movey2+4);
+	  					  if(io == 1){
+	  						  io = comparacion(movex2+l,xx2[n3],movex);
+	  						  if(io == 1){
+	  							  state = 0;
+	  						  }
+	  						  io = comparacion(movex2+l,xx2[n3],movex+g);
+	  						  if(io == 1){
+	  							  state = 0;
+	  						  }
+	  					  }
+	  				  }
+	  				  if(c == 1){
+	  					  int8_t i=0;
+	  					  uint8_t o=0;
+	  					  i = d_posicion3(xx,n1,movex2+mm,movex2+l);
+	  					  if(i != -1){
+	  						  o = comparacion(yf[i], yi[i], movey2);
+	  						  if (o == 1){
+	  							  state = 5;
+	  						  }
+	  						  o = comparacion(yf[i], yi[i], movey2+g);
+	  						  if(o==1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  					  i = d_posicion3(xx2,n3,movex2+mm,movex2+l);
+	  					  if(i != -1){
+	  						  o = comparacion(yf2[i], yi2[i], movey2);
+	  						  if (o == 1){
+	  							  state = 5;
+	  						  }
+	  						  o = comparacion(yf2[i], yi2[i], movey2+g);
+	  						  if(o==1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  					  if(arriba == 2){
+	  						  i = comparacion(movex2+mm,movex2+l,movex+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movey,yy[n2],movey2);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  							  o = comparacion(movey,yy[n2],movey2+g);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+	  					  if(abajo == 2){
+	  						  i = comparacion(movex2+mm,movex2+l,movex+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movey+l,yy[n2],movey2);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  							  o = comparacion(movey+l,yy[n2],movey2+g);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+	  					  c = 0;
+	  				  }
+	  				  movex2 += vj2;
+	  				  //linea2+=4;
+	  				  //H_line(originx2,originy2,linea2,0xFFFF);
+	  				  FillRect(movex2-4,movey2,vj2,2,0x0000);
+	  				  FillRect(movex2-4,movey2+2,vj2,2,rastroj2);
+	  				  FillRect(movex2-4,movey2+4,vj2,1,0xFFFF);
+	  				  FillRect(movex2-4,movey2+5,vj2,2,rastroj2);
+	  				  FillRect(movex2-4,movey2+7,vj2,2,0x0000);
+	  			  }
+	  	  ///////////////////////////////////////////////////////////////////////////////////////////////////
+	  			  if (izquierda2 == 2){
+	  				  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
+	  				  LCD_Bitmap(movex2+pr,movey2,18,9,moto_izquierda);
+	  				  int8_t oi = 0;
+	  				  oi = d_posicion3(xx, n1, movex2,movex2-vj2);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = yi[oi];
+	  					  f = yf[oi];
+	  					  oi = comparacion(i,f,movey2);
+	  					  iio = comparacion(i,f,movey2+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 5;
+	  					  }
+	  				  }
+	  				  oi = d_posicion3(xx2, n3, movex2,movex2+vj2);
+	  				  if (oi != -1){
+	  					  //FillRect(288,0,32,300,0xF800);
+	  					  //HAL_Delay(100);
+	  					  //illRect(288,0,32,300,0x630C);
+	  					  uint8_t i;
+	  					  uint8_t f;
+	  					  uint8_t iio;
+
+	  					  i = yi2[oi];
+	  					  f = yf2[oi];
+	  					  oi = comparacion(i,f,movey2);
+	  					  iio = comparacion(i,f,movey2+g);
+	  					  if(oi == 1 || iio == 1){
+	  						  state = 5;
+	  					  }
+	  				  }
+
+	  				  //COLISION JUGADOR QUE SE MUEVE
+	  				  if(arriba == 2){
+	  					  io = comparacion(movey,movey+vj1,movey2+4);
+	  						  if(io == 1){
+	  							  io = comparacion(movex2,xx2[n3],movex);
+	  							  if(io == 1){
+	  								  state = 0;
+	  							  }
+	  							  io = comparacion(movex2,xx2[n3],movex+g);
+	  							  if(io == 1){
+	  								  state = 0;
+	  							  }
+	  						  }
+	  					  }
+
+	  				  if(abajo == 2){
+	  					  io = comparacion(movey+l,movey+l+vj1,movey2+4);
+	  						  if(io == 1){
+	  							  io = comparacion(movex2,xx2[n3],movex);
+	  							  if(io == 1){
+	  								  state = 0;
+	  							  }
+	  							  io = comparacion(movex2,xx2[n3],movex+g);
+	  							  if(io == 1){
+	  								  state = 0;
+	  							  }
+	  						  }
+	  					  }
+	  				  if(c == 1){
+	  					  int8_t i=0;
+	  					  uint8_t o=0;
+	  					  i = d_posicion3(xx,n1,movex2,movex2+l-mm);
+	  					  if(i != -1){
+	  						  o = comparacion(yf[i], yi[i], movey);
+	  						  if (o == 1){
+	  							  state = 5;
+	  						  }
+	  						  o = comparacion(yf[i], yi[i], movey+g);
+	  						  if(o==1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  					  i = d_posicion3(xx2,n3,movex2,movex2+l-mm);
+	  					  if(i != -1){
+	  						  o = comparacion(yf2[i], yi2[i], movey);
+	  						  if (o == 1){
+	  							  state = 5;
+	  						  }
+	  						  o = comparacion(yf2[i], yi2[i], movey+g);
+	  						  if(o==1){
+	  							  state = 5;
+	  						  }
+	  					  }
+	  					  if(arriba == 2){
+	  						  i = comparacion(movex2,movex2+l-mm,movex+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movey,yy[n2],movey2);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  							  o = comparacion(movey,yy[n2],movey2+g);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+	  					  if(abajo == 2){
+	  						  i = comparacion(movex2,movex2+l-mm,movex+4);
+	  						  if(i == 1){
+	  							  o = comparacion(movey+l,yy[n2],movey2);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  							  o = comparacion(movey+l,yy[n2],movey2+g);
+	  							  if(o == 1){
+	  								  state = 5;
+	  							  }
+	  						  }
+	  					  }
+	  					  c = 0;
+	  				  }
+	  				  movex2 -= vj2;
+	  				  //linea2+=4;
+	  				  //H_line(movex2+l,originy2,linea2,0xFFFF);
+	  				  FillRect(movex2+l,movey2,vj2,2,0x0000);
+	  				  FillRect(movex2+l,movey2+2,vj2,2,rastroj2);
+	  				  FillRect(movex2+l,movey2+4,vj2,1,0xFFFF);
+	  				  FillRect(movex2+l,movey2+5,vj2,2,rastroj2);
+	  				  FillRect(movex2+l,movey2+7,vj2,2,0x0000);
+
+	  			  }
+	  		  }while(state == 3);
+	  	  }else if(state == 5){
+	  		  char buffer[4];
+	  		  transmit_uart("3");
+	  		  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)0x1112
+	  		  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)0xFE20
+	  		  if(derecha2 == 2){
+	  			  LCD_Bitmap(movex2+pr,movey2,18,9,moto_derecha);
+	  			  LCD_Sprite(movex2+20,movey2-4,20,16,explosion,5,0,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2+20,movey2-4,20,16,explosion,5,1,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2+20,movey2-4,20,16,explosion,5,2,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2+20,movey2-4,20,16,explosion,5,3,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2+20,movey2-4,20,16,explosion,5,4,0,0);
+				  HAL_Delay(150);
+	  		  }
+	  		  if(izquierda2 == 2){
+	  			  LCD_Bitmap(movex2+pr,movey2,18,9,moto_izquierda);
+	  			  LCD_Sprite(movex2-8,movey2-4,20,16,explosion,5,0,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-8,movey2-4,20,16,explosion,5,1,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-8,movey2-4,20,16,explosion,5,2,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-8,movey2-4,20,16,explosion,5,3,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-8,movey2-4,20,16,explosion,5,4,0,0);
+				  HAL_Delay(150);
+	  		  }
+	  		  if(abajo2 == 2){
+	  			  LCD_Bitmap(movex2,movey2+pr,9,18,moto_abajo);
+	  			  LCD_Sprite(movex2-6,movey2+20,20,16,explosion,5,0,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-6,movey2+20,20,16,explosion,5,1,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-6,movey2+20,20,16,explosion,5,2,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-6,movey2+20,20,16,explosion,5,3,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-6,movey2+20,20,16,explosion,5,4,0,0);
+				  HAL_Delay(150);
+	  		  }
+	  		  if(arriba2 == 2){
+	  			  LCD_Bitmap(movex2,movey2+pr,9,18,moto_arriba);
+	  			  LCD_Sprite(movex2-6,movey2-8,20,16,explosion,5,0,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-6,movey2-8,20,16,explosion,5,1,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-6,movey2-8,20,16,explosion,5,2,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-6,movey2-8,20,16,explosion,5,3,0,0);
+				  HAL_Delay(150);
+				  LCD_Sprite(movex2-6,movey2-8,20,16,explosion,5,4,0,0);
+				  HAL_Delay(150);
+	  		  }
+	  		  if(derecha == 2){
+				  LCD_Bitmap(movex+pr,movey,18,9,moto_derecha);
+
 			  }
-		  }while(state == 7);
-	  }else if(state == 8){
-		  vaciar_listas();
-		  movex = 0;
-		  movey = 0;
+			  if(izquierda == 2){
+				  LCD_Bitmap(movex+pr,movey,18,9,moto_izquierda);
 
-		  movex2 = 0;
-		  movey2 = 240-g;
-		  x = l;
-		  y = g;
-		  x2 = l;
-		  y2 = g;
-		  FillRect(65,60,200,150,0x0000);
-		  //FillRect(255,0,65,300,0x630C);
-		  FillRect(255,0,2,240,azul);
-		  FillRect(257,0,1,240,0xFFFF);
-		  FillRect(258,0,2,240,azul);
-		  arriba = 0;
-		  abajo = 0;
-		  derecha = 0;
-		  izquierda = 0;
-		  arriba2 = 0;
-		  abajo2 = 0;
-		  derecha2 = 0;
-		  izquierda2 = 0;
-		  HAL_Delay(100);
+			  }
+			  if(abajo == 2){
+				  LCD_Bitmap(movex,movey+pr,9,18,moto_abajo);
 
-		  if(j1[1] == 1){
-			  rastroj1 = azul;
-			  colorj1 = azulo;
-		  }else if(j1[1] == 2){
-			  rastroj1 = verde;
-			  colorj1 = verdeo;
-		  }else if(j1[1] == 3){
-			  rastroj1 = naranja;
-			  colorj1 = naranjao;
-		  }else if(j1[1] == 4){
-			  rastroj1 = amarillo;
-			  colorj1 = amarilloo;
-		  }else if(j1[1] == 5){
-			  rastroj1 = rojo;
-			  colorj1 = rojoo;
-		  }else if(j1[1] == 6){
-			  rastroj1 = rosa;
-			  colorj1 = rosao;
-		  }
-		  if(j2[1] == 1){
-			  rastroj2 = azul;
-			  colorj2 = azulo;
-		  }else if(j2[1] == 2){
-			  rastroj2 = verde;
-			  colorj2 = verdeo;
-		  }else if(j2[1] == 3){
-			  rastroj2 = naranja;
-			  colorj2 = naranjao;
-		  }else if(j2[1] == 4){
-			  rastroj2 = amarillo;
-			  colorj2 = amarilloo;
-		  }else if(j2[1] == 5){
-			  rastroj2 = rojo;
-			  colorj2 = rojoo;
-		  }else if(j2[1] == 6){
-			  rastroj2 = rosa;
-			  colorj2 = rosao;
-		  }
-		  state = 3;
-	  }else if(state == 9){//estado de pruebas de bitmaps
-		  LCD_Bitmap(0,0,18,9,moto_derecha);
-		  LCD_Bitmap(30,0,18,9,moto_izquierda);
-		  LCD_Bitmap(60,0,9,18,moto_arriba);
-		  LCD_Bitmap(90,0,9,18,moto_abajo);
-		  do{
-			  HAL_Delay(50);
-		  }while(state == 9);
-	  }
+			  }
+			  if(arriba == 2){
+				  LCD_Bitmap(movex,movey+pr,9,18,moto_arriba);
+
+			  }
+	  		  HAL_Delay(2000);
+	  		  LCD_Clear(0x0000);
+	  		  LCD_Print("Fin Del Juego",50,90,2,0xFFFF,0x0000);
+	  		  LCD_Print("Jugador 1 gana", 40,110,2,rastroj1,0x0000);
+	  		  gj1++;
+	  		  sprintf(buffer, "%u",gj1);
+	  		  LCD_Print(buffer, 145,130,2,rastroj1,0x0000);
+	  		  LCD_Print("-", 160,130,2,0xFFFF,0x0000);
+	  		  sprintf(buffer, "%u",gj2);
+	  		  if(gj2 == 0){
+	  			  LCD_Print("0",175,130,2,rastroj2,0x0000);
+	  		  }else{
+	  			  LCD_Print(buffer,175,130,2,rastroj2,0x0000);
+	  		  }
+
+	  		  do{
+	  			  HAL_Delay(50);
+	  		  }while(state == 5);
+	  	  }else if(state == 6){//menu
+	  		  LCD_Clear(0x00);
+	  		  transmit_uart("1");
+	  		  gj1 = -1;
+	  		  gj2 = -1;
+
+	  		  LCD_Bitmap(0,0,320,180,menu2);
+	  		  //LCD_Clear(0x0000);
+	  		  //LCD_Print("Menu lol",50,90,2,0xFFFF,0x0000);
+	  		  while(state == 6){//menu
+
+	  			  HAL_Delay(50);
+	  		  }
+	  	  }else if(state == 7){
+	  		  LCD_Clear(0x0000);
+	  		  FillRect(65,60,50,50,azul);
+	  		  FillRect(135,60,50,50,verde);
+	  		  FillRect(205,60,50,50,naranja);
+	  		  FillRect(65,130,50,50,amarillo);
+	  		  FillRect(135,130,50,50,rojo);
+	  		  FillRect(205,130,50,50,rosa);
+	  		  j1[1] = 1;
+	  		  j2[1] = 4;
+	  		  j1[2] = 0;
+	  		  j2[2] = 0;
+	  		  do{
+	  			  if(j1[2] == 0){
+	  				  if(j1[1] == 1){
+	  					  LCD_Print("J1",75,70,2,0xFFFF,azul);
+	  					  j1borrar();
+	  				  }else if(j1[1] == 2){
+	  					  LCD_Print("J1",145,70,2,0xFFFF,verde);
+	  					  j1borrar();
+	  				  }else if(j1[1] == 3){
+	  					  LCD_Print("J1",215,70,2,0xFFFF,naranja);
+	  					  j1borrar();
+	  				  }else if(j1[1] == 4){
+	  					  LCD_Print("J1",75,140,2,0xFFFF,amarillo);
+	  					  j1borrar();
+	  				  }else if(j1[1] == 5){
+	  					  LCD_Print("J1",145,140,2,0xFFFF,rojo);
+	  					  j1borrar();
+	  				  }else if(j1[1] == 6){
+	  					  LCD_Print("J1",215,140,2,0xFFFF,rosa);
+	  					  j1borrar();
+	  				  }
+	  			  }else if(j1[2] == 1){
+	  				  LCD_Print("J1 Listo",75,190,1,0xFFFF,0x0000);
+	  			  }
+	  			  if(j2[2] == 0){
+	  				  if(j2[1] == 1){
+	  					  LCD_Print("J2",75,70,2,0xFFFF,azul);
+	  					  j2borrar();
+	  				  }else if(j2[1] == 2){
+	  					  LCD_Print("J2",145,70,2,0xFFFF,verde);
+	  					  j2borrar();
+	  				  }else if(j2[1] == 3){
+	  					  LCD_Print("J2",215,70,2,0xFFFF,naranja);
+	  					  j2borrar();
+	  				  }else if(j2[1] == 4){
+	  					  LCD_Print("J2",75,140,2,0xFFFF,amarillo);
+	  					  j2borrar();
+	  				  }else if(j2[1] == 5){
+	  					  LCD_Print("J2",145,140,2,0xFFFF,rojo);
+	  					  j2borrar();
+	  				  }else if(j2[1] == 6){
+	  					  LCD_Print("J2",215,140,2,0xFFFF,rosa);
+	  					  j2borrar();
+	  				  }
+	  			  }else if(j2[2] == 1){
+	  				  LCD_Print("J2 Listo",200,190,1,0xFFFF,0x0000);
+	  			  }
+	  			  if(j2[2] == 1 && j1[2] == 1){
+	  				  state = 8;
+	  			  }
+	  		  }while(state == 7);
+	  	  }else if(state == 8){
+	  		  vaciar_listas();
+	  		  movex = 0;
+	  		  movey = 0;
+
+	  		  movex2 = 0;
+	  		  movey2 = 240-g;
+	  		  x = l;
+	  		  y = g;
+	  		  x2 = l;
+	  		  y2 = g;
+	  		  FillRect(65,60,200,150,0x0000);
+	  		  //FillRect(255,0,65,300,0x630C);
+	  		  FillRect(255,0,2,240,azul);
+	  		  FillRect(257,0,1,240,0xFFFF);
+	  		  FillRect(258,0,2,240,azul);
+	  		  arriba = 0;
+	  		  abajo = 0;
+	  		  derecha = 2;
+	  		  izquierda = 0;
+	  		  arriba2 = 0;
+	  		  abajo2 = 0;
+	  		  derecha2 = 2;
+	  		  izquierda2 = 0;
+	  		  HAL_Delay(100);
+
+	  		  if(j1[1] == 1){
+	  			  rastroj1 = azul;
+	  			  colorj1 = azulo;
+	  		  }else if(j1[1] == 2){
+	  			  rastroj1 = verde;
+	  			  colorj1 = verdeo;
+	  		  }else if(j1[1] == 3){
+	  			  rastroj1 = naranja;
+	  			  colorj1 = naranjao;
+	  		  }else if(j1[1] == 4){
+	  			  rastroj1 = amarillo;
+	  			  colorj1 = amarilloo;
+	  		  }else if(j1[1] == 5){
+	  			  rastroj1 = rojo;
+	  			  colorj1 = rojoo;
+	  		  }else if(j1[1] == 6){
+	  			  rastroj1 = rosa;
+	  			  colorj1 = rosao;
+	  		  }
+	  		  if(j2[1] == 1){
+	  			  rastroj2 = azul;
+	  			  colorj2 = azulo;
+	  		  }else if(j2[1] == 2){
+	  			  rastroj2 = verde;
+	  			  colorj2 = verdeo;
+	  		  }else if(j2[1] == 3){
+	  			  rastroj2 = naranja;
+	  			  colorj2 = naranjao;
+	  		  }else if(j2[1] == 4){
+	  			  rastroj2 = amarillo;
+	  			  colorj2 = amarilloo;
+	  		  }else if(j2[1] == 5){
+	  			  rastroj2 = rojo;
+	  			  colorj2 = rojoo;
+	  		  }else if(j2[1] == 6){
+	  			  rastroj2 = rosa;
+	  			  colorj2 = rosao;
+	  		  }
+	  		  state = 3;
+	  	  }else if(state == 9){//estado de pruebas de bitmaps
+	  		  LCD_Clear(0x00);
+	  		  FillRect(50,50,40,32,verde);
+	  		  turbo2 = 0;
+	  		  do{
+	  			  LCD_Sprite(50,50,20,16,explosion,5,0,0,0);
+	  			  HAL_Delay(150);
+	  			  LCD_Sprite(50,50,20,16,explosion,5,1,0,0);
+	  			  HAL_Delay(150);
+	  			  LCD_Sprite(50,50,20,16,explosion,5,2,0,0);
+	  			  HAL_Delay(150);
+	  			  LCD_Sprite(50,50,20,16,explosion,5,3,0,0);
+	  			  HAL_Delay(150);
+	  			  LCD_Sprite(50,50,20,16,explosion,5,4,0,0);
+	  			  HAL_Delay(150);
+
+
+	  			  /*turbo2++;
+	  			  if(turbo2 == 4){
+	  				  turbo2 = 0;
+	  			  }
+				  LCD_Sprite(50,50,10,8,explosion,4,turbo2,0,0);*/
+
+
+	  		  }while(state == 9);
+	  	  }
 
 
 
 
 
-			  HAL_Delay(50);
+	  			  HAL_Delay(50);
 
 
-	  }
+	  	  }
 
 
-  }
+	    }
   /* USER CODE END 3 */
 
 
@@ -1692,6 +1829,39 @@ static void MX_TIM6_Init(void)
 }
 
 /**
+  * @brief UART5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART5_Init(void)
+{
+
+  /* USER CODE BEGIN UART5_Init 0 */
+
+  /* USER CODE END UART5_Init 0 */
+
+  /* USER CODE BEGIN UART5_Init 1 */
+
+  /* USER CODE END UART5_Init 1 */
+  huart5.Instance = UART5;
+  huart5.Init.BaudRate = 115200;
+  huart5.Init.WordLength = UART_WORDLENGTH_8B;
+  huart5.Init.StopBits = UART_STOPBITS_1;
+  huart5.Init.Parity = UART_PARITY_NONE;
+  huart5.Init.Mode = UART_MODE_TX_RX;
+  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART5_Init 2 */
+
+  /* USER CODE END UART5_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -1740,6 +1910,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, LCD_RST_Pin|LCD_D1_Pin, GPIO_PIN_RESET);
@@ -1914,10 +2085,13 @@ void j2borrar(void){
 
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+
 	if(state == 3){
 		c = 1;
 	}
-
+	if(RX[0] == 'f'){
+		turbo1 = 1;
+	}
 	if(RX[0] == 'e'){
 		if(state == 0 || state == 5){
 			state = 2;
@@ -1995,6 +2169,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 				yy[n2] = movey + 4;
 				xf[n2] = movex+d+4;
+
 				xi[n2] = xx[n1];
 
 				//originx = movex+d+4;
@@ -2555,6 +2730,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}
 
 	}
+
 
 	HAL_UART_Receive_IT(&huart2, RX, 1);
 }
