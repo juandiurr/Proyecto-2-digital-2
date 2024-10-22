@@ -237,6 +237,8 @@ int main(void)
 	  if(state == 0){
 	  		  char buffer[4];
 	  		  transmit_uart("3");
+	  		  HAL_TIM_Base_Stop_IT(&htim14);
+	  		  HAL_TIM_Base_Stop_IT(&htim13);
 	  		  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
 	  		  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
 	  		  if(derecha2 == 2){
@@ -480,7 +482,7 @@ int main(void)
 	  						  if(io == 1){
 	  							  state = 5;
 	  						  }
-	  						  io = comparacion(movey,yy[n2],movey+g);
+	  						  io = comparacion(movey,yy[n2],movey2+g);
 	  						  if(io == 1){
 	  							  state = 5;
 	  						  }
@@ -539,8 +541,6 @@ int main(void)
 	  							  }
 	  						  }
 	  					  }
-
-
 	  					  c = 0;
 	  				  }
 	  				  //MOVIMIENTO DEL JUGADOR
@@ -1270,7 +1270,7 @@ int main(void)
 	  					  }
 	  				  }
 	  				  if(abajo == 2){
-	  					  io = comparacion(movey+l,movey+l+vj1+1,movey2+4);
+	  					  io = comparacion(movey+l,movey+l+vj1,movey2+4);
 	  					  if(io == 1){
 	  						  io = comparacion(movex2+l,xx2[n3],movex);
 	  						  if(io == 1){
@@ -1386,7 +1386,7 @@ int main(void)
 
 	  				  //COLISION JUGADOR QUE SE MUEVE
 	  				  if(arriba == 2){
-	  					  io = comparacion(movey,movey+vj1,movey2+4);
+	  					  io = comparacion(movey,movey-vj1,movey2+4);
 	  						  if(io == 1){
 	  							  io = comparacion(movex2,xx2[n3],movex);
 	  							  if(io == 1){
@@ -1479,6 +1479,8 @@ int main(void)
 	  	  }else if(state == 5){
 	  		  char buffer[4];
 	  		  transmit_uart("3");
+	  		  HAL_TIM_Base_Stop_IT(&htim14);
+	  		  HAL_TIM_Base_Stop_IT(&htim13);
 	  		  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)0x1112
 	  		  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)0xFE20
 	  		  if(derecha == 2){
