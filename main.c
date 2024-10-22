@@ -50,7 +50,9 @@ uint32_t totalSpace, freeSpace;
 char buffer[100];*/
 
 //unsigned char menu[MAX_FILE_SIZE] PROGMEM;
-extern uint8_t menu2[];
+//extern uint8_t menu2[];
+extern uint8_t logo[];
+extern uint8_t moto_[];
 
 uint8_t start = 2;
 uint8_t movex = 0;
@@ -127,6 +129,10 @@ int8_t gj1 = -1;
 
 uint8_t turbo1 = 0;
 uint8_t turbo2 = 0;
+uint8_t cd1 = 0;
+uint8_t cd2 = 0;
+char tm1[4];
+char tm2[0];
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -137,7 +143,8 @@ uint8_t turbo2 = 0;
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi1;
 
-TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim13;
+TIM_HandleTypeDef htim14;
 
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart2;
@@ -150,9 +157,10 @@ UART_HandleTypeDef huart2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_TIM6_Init(void);
 static void MX_UART5_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_TIM14_Init(void);
+static void MX_TIM13_Init(void);
 /* USER CODE BEGIN PFP */
 
 void vaciar_listas(void);
@@ -164,7 +172,8 @@ uint8_t min(uint8_t num1, uint8_t num2);
 uint8_t max(uint8_t num1, uint8_t num2);
 void j1borrar(void);
 void j2borrar(void);
-
+void cool1(void);
+void cool2 (void);
 void transmit_uart(char *message);
 /* USER CODE END PFP */
 
@@ -204,11 +213,14 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   MX_FATFS_Init();
-  MX_TIM6_Init();
   MX_UART5_Init();
   MX_USART2_UART_Init();
+  MX_TIM14_Init();
+  MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
   HAL_UART_Receive_IT(&huart2, RX, 1);
+  //UHAL_TIM_Base_Stop_IT(&htim14);
+
   LCD_Init();
   //LCD_Clear(0x00);
   //FillRect(288,0,32,8,0x1112);
@@ -230,6 +242,22 @@ int main(void)
 	  		  transmit_uart("3");
 	  		  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)
 	  		  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)
+	  		  if(derecha2 == 2){
+				  LCD_Bitmap(movex2+pr,movey2,18,9,moto_derecha);
+
+			  }
+			  if(izquierda2 == 2){
+				  LCD_Bitmap(movex2+pr,movey2,18,9,moto_izquierda);
+
+			  }
+			  if(abajo2 == 2){
+				  LCD_Bitmap(movex2,movey2+pr,9,18,moto_abajo);
+
+			  }
+			  if(arriba2 == 2){
+				  LCD_Bitmap(movex2,movey2+pr,9,18,moto_arriba);
+
+			  }
 	  		  if(derecha == 2){
 	  			  LCD_Bitmap(movex+pr,movey,18,9,moto_derecha);
 	  			  LCD_Sprite(movex+20,movey-4,20,16,explosion,5,0,0,0);
@@ -282,22 +310,7 @@ int main(void)
 				  LCD_Sprite(movex-6,movey-8,20,16,explosion,5,4,0,0);
 				  HAL_Delay(150);
 	  		  }
-	  		  if(derecha2 == 2){
-				  LCD_Bitmap(movex2+pr,movey2,18,9,moto_derecha);
 
-			  }
-			  if(izquierda2 == 2){
-				  LCD_Bitmap(movex2+pr,movey2,18,9,moto_izquierda);
-
-			  }
-			  if(abajo2 == 2){
-				  LCD_Bitmap(movex2,movey2+pr,9,18,moto_abajo);
-
-			  }
-			  if(arriba2 == 2){
-				  LCD_Bitmap(movex2,movey2+pr,9,18,moto_arriba);
-
-			  }
 	  		  HAL_Delay(2000);
 	  		  LCD_Clear(0x0000);
 	  		  LCD_Print("Fin Del Juego",50,90,2,0xFFFF,0x0000);
@@ -332,6 +345,20 @@ int main(void)
 	  		  FillRect(255,0,2,240,azul);
 	  		  FillRect(257,0,1,240,0xFFFF);
 	  		  FillRect(258,0,2,240,azul);
+	  		  V_line(32,0,240,0x212E);
+	  		  V_line(64,0,240,0x212E);
+	  		  V_line(96,0,240,0x212E);
+	  		  V_line(128,0,240,0x212E);
+	  		  V_line(160,0,240,0x212E);
+	  		  V_line(192,0,240,0x212E);
+	  		  V_line(224,0,240,0x212E);
+	  		  H_line(0,32,255,0x212E);
+	  		  H_line(0,64,255,0x212E);
+	  		  H_line(0,96,255,0x212E);
+	  		  H_line(0,128,255,0x212E);
+	  		  H_line(0,160,255,0x212E);
+	  		  H_line(0,192,255,0x212E);
+	  		  H_line(0,224,255,0x212E);
 	  		  arriba = 0;
 	  		  abajo = 0;
 	  		  derecha = 2;
@@ -344,11 +371,25 @@ int main(void)
 	  		  state = 3;
 	  	  }else if(state == 3){
 	  		  transmit_uart("2");
-
+	  		  cd1 = 0;
+	  		  cd2 = 0;
 	  		  do{
-	  			  HAL_Delay(50);
 
-	  			  yy2[0] = movey2+4;
+	  			  HAL_Delay(50);
+	  			  if(cd1 <= 8 && cd1 >= 6){
+					  vj1 = 8;
+				  }else{
+					  vj1 = 4;
+				  }
+	  			  cool1();
+	  			  if(cd2 <= 8 && cd2 >= 6){
+	  				  vj2 = 8;
+	  			  }else{
+	  				  vj2 = 4;
+	  			  }
+	  			  cool2();
+
+
 	  			  if(x == l){
 	  				  if(movex < 0 || movex > 255-l){
 	  					  state = 0;
@@ -1171,11 +1212,11 @@ int main(void)
 	  				  }
 	  				  //linea2+=4;
 	  				  //V_line(originx2,originy2,linea2,0xFFFF);
-	  				  FillRect(movex2,movey2-4,2,vj2,0x0000);
-	  				  FillRect(movex2+2,movey2-4,2,vj2,rastroj2);
-	  				  FillRect(movex2+4,movey2-4,1,vj2,0xFFFF);
-	  				  FillRect(movex2+5,movey2-4,2,vj2,rastroj2);
-	  				  FillRect(movex2+7,movey2-4,2,vj2,0x0000);
+	  				  FillRect(movex2,movey2-vj2,2,vj2,0x0000);
+	  				  FillRect(movex2+2,movey2-vj2,2,vj2,rastroj2);
+	  				  FillRect(movex2+4,movey2-vj2,1,vj2,0xFFFF);
+	  				  FillRect(movex2+5,movey2-vj2,2,vj2,rastroj2);
+	  				  FillRect(movex2+7,movey2-vj2,2,vj2,0x0000);
 	  			  }
 	  	  /////////////////////////////////////////////////////////////////////////////////////////////////////
 	  			  if (derecha2 == 2){
@@ -1300,11 +1341,11 @@ int main(void)
 	  				  movex2 += vj2;
 	  				  //linea2+=4;
 	  				  //H_line(originx2,originy2,linea2,0xFFFF);
-	  				  FillRect(movex2-4,movey2,vj2,2,0x0000);
-	  				  FillRect(movex2-4,movey2+2,vj2,2,rastroj2);
-	  				  FillRect(movex2-4,movey2+4,vj2,1,0xFFFF);
-	  				  FillRect(movex2-4,movey2+5,vj2,2,rastroj2);
-	  				  FillRect(movex2-4,movey2+7,vj2,2,0x0000);
+	  				  FillRect(movex2-vj2,movey2,vj2,2,0x0000);
+	  				  FillRect(movex2-vj2,movey2+2,vj2,2,rastroj2);
+	  				  FillRect(movex2-vj2,movey2+4,vj2,1,0xFFFF);
+	  				  FillRect(movex2-vj2,movey2+5,vj2,2,rastroj2);
+	  				  FillRect(movex2-vj2,movey2+7,vj2,2,0x0000);
 	  			  }
 	  	  ///////////////////////////////////////////////////////////////////////////////////////////////////
 	  			  if (izquierda2 == 2){
@@ -1443,6 +1484,22 @@ int main(void)
 	  		  transmit_uart("3");
 	  		  FillRect(movex,movey,x,y,colorj1);//jugador 1(azul)0x1112
 	  		  FillRect(movex2,movey2,x2,y2,colorj2);//jugador 2 (amarillo)0xFE20
+	  		  if(derecha == 2){
+				  LCD_Bitmap(movex+pr,movey,18,9,moto_derecha);
+
+			  }
+			  if(izquierda == 2){
+				  LCD_Bitmap(movex+pr,movey,18,9,moto_izquierda);
+
+			  }
+			  if(abajo == 2){
+				  LCD_Bitmap(movex,movey+pr,9,18,moto_abajo);
+
+			  }
+			  if(arriba == 2){
+				  LCD_Bitmap(movex,movey+pr,9,18,moto_arriba);
+
+			  }
 	  		  if(derecha2 == 2){
 	  			  LCD_Bitmap(movex2+pr,movey2,18,9,moto_derecha);
 	  			  LCD_Sprite(movex2+20,movey2-4,20,16,explosion,5,0,0,0);
@@ -1495,31 +1552,16 @@ int main(void)
 				  LCD_Sprite(movex2-6,movey2-8,20,16,explosion,5,4,0,0);
 				  HAL_Delay(150);
 	  		  }
-	  		  if(derecha == 2){
-				  LCD_Bitmap(movex+pr,movey,18,9,moto_derecha);
 
-			  }
-			  if(izquierda == 2){
-				  LCD_Bitmap(movex+pr,movey,18,9,moto_izquierda);
-
-			  }
-			  if(abajo == 2){
-				  LCD_Bitmap(movex,movey+pr,9,18,moto_abajo);
-
-			  }
-			  if(arriba == 2){
-				  LCD_Bitmap(movex,movey+pr,9,18,moto_arriba);
-
-			  }
 	  		  HAL_Delay(2000);
 	  		  LCD_Clear(0x0000);
 	  		  LCD_Print("Fin Del Juego",50,90,2,0xFFFF,0x0000);
 	  		  LCD_Print("Jugador 1 gana", 40,110,2,rastroj1,0x0000);
 	  		  gj1++;
-	  		  sprintf(buffer, "%u",gj1);
+	  		  itoa(gj1,buffer,10);
 	  		  LCD_Print(buffer, 145,130,2,rastroj1,0x0000);
 	  		  LCD_Print("-", 160,130,2,0xFFFF,0x0000);
-	  		  sprintf(buffer, "%u",gj2);
+	  		  itoa(gj2, buffer,10);
 	  		  if(gj2 == 0){
 	  			  LCD_Print("0",175,130,2,rastroj2,0x0000);
 	  		  }else{
@@ -1531,16 +1573,48 @@ int main(void)
 	  		  }while(state == 5);
 	  	  }else if(state == 6){//menu
 	  		  LCD_Clear(0x00);
-	  		  transmit_uart("1");
-	  		  gj1 = -1;
-	  		  gj2 = -1;
+	  		  V_line(0,0,240,0x212E);
+	  		  V_line(32,0,240,0x212E);
+			  V_line(64,0,240,0x212E);
+			  V_line(96,0,240,0x212E);
+			  V_line(128,0,240,0x212E);
+			  V_line(160,0,240,0x212E);
+			  V_line(192,0,240,0x212E);
+			  V_line(224,0,240,0x212E);
+			  V_line(256,0,240,0x212E);
+			  V_line(288,0,240,0x212E);
+			  V_line(320,0,240,0x212E);
+			  H_line(0,0,320,0x212E);
+			  H_line(0,32,320,0x212E);
+			  H_line(0,64,320,0x212E);
+			  H_line(0,96,320,0x212E);
+			  H_line(0,128,320,0x212E);
+			  H_line(0,160,320,0x212E);
+			  H_line(0,192,320,0x212E);
+			  H_line(0,224,320,0x212E);
+			  H_line(0,240,320,0x212E);
 
-	  		  LCD_Bitmap(0,0,320,180,menu2);
+	  		  transmit_uart("1");
+	  		  gj1 = 0;
+	  		  gj2 = 0;
+	  		  cd1 = 0;
+	  		  cd2 = 0;
+	  		  HAL_TIM_Base_Stop_IT(&htim14);
+	  		  HAL_TIM_Base_Stop_IT(&htim13);
+
+	  		  //LCD_Bitmap(0,0,320,180,menu2);
+	  		 // FillRect(85,60,140,50,0xFFFF);//logo
+	  		  LCD_Bitmap(60,40,190,49,logo);
+	  		  //FillRect(0,120,230,40,0xFFFF);//moto
+	  		  LCD_Bitmap(0,135,230,42,moto_);
 	  		  //LCD_Clear(0x0000);
 	  		  //LCD_Print("Menu lol",50,90,2,0xFFFF,0x0000);
 	  		  while(state == 6){//menu
-
-	  			  HAL_Delay(50);
+	  			  LCD_Print("Presiona cualquier boton",60,195,1,azul,0x0000);
+	  			  HAL_Delay(500);
+	  			  LCD_Print("Presiona cualquier boton",60,195,1,0x0000,0x0000);
+	  			  //FillRect(60,195,200,12,0x0000);
+	  			  HAL_Delay(500);
 	  		  }
 	  	  }else if(state == 7){
 	  		  LCD_Clear(0x0000);
@@ -1606,6 +1680,8 @@ int main(void)
 	  			  }
 	  		  }while(state == 7);
 	  	  }else if(state == 8){
+	  		  gj1 = 0;
+	  		  gj2 = 0;
 	  		  vaciar_listas();
 	  		  movex = 0;
 	  		  movey = 0;
@@ -1621,6 +1697,20 @@ int main(void)
 	  		  FillRect(255,0,2,240,azul);
 	  		  FillRect(257,0,1,240,0xFFFF);
 	  		  FillRect(258,0,2,240,azul);
+	  		  V_line(32,0,240,0x212E);
+	  		  V_line(64,0,240,0x212E);
+	  		  V_line(96,0,240,0x212E);
+	  		  V_line(128,0,240,0x212E);
+	  		  V_line(160,0,240,0x212E);
+	  		  V_line(192,0,240,0x212E);
+	  		  V_line(224,0,240,0x212E);
+			  H_line(0,32,255,0x212E);
+			  H_line(0,64,255,0x212E);
+			  H_line(0,96,255,0x212E);
+			  H_line(0,128,255,0x212E);
+			  H_line(0,160,255,0x212E);
+			  H_line(0,192,255,0x212E);
+			  H_line(0,224,255,0x212E);
 	  		  arriba = 0;
 	  		  abajo = 0;
 	  		  derecha = 2;
@@ -1671,27 +1761,16 @@ int main(void)
 	  		  }
 	  		  state = 3;
 	  	  }else if(state == 9){//estado de pruebas de bitmaps
-	  		  LCD_Clear(0x00);
-	  		  FillRect(50,50,40,32,verde);
-	  		  turbo2 = 0;
+	  		  LCD_Clear(0x0000);
+
 	  		  do{
-	  			  LCD_Sprite(50,50,20,16,explosion,5,0,0,0);
-	  			  HAL_Delay(150);
-	  			  LCD_Sprite(50,50,20,16,explosion,5,1,0,0);
-	  			  HAL_Delay(150);
-	  			  LCD_Sprite(50,50,20,16,explosion,5,2,0,0);
-	  			  HAL_Delay(150);
-	  			  LCD_Sprite(50,50,20,16,explosion,5,3,0,0);
-	  			  HAL_Delay(150);
-	  			  LCD_Sprite(50,50,20,16,explosion,5,4,0,0);
-	  			  HAL_Delay(150);
 
 
-	  			  /*turbo2++;
-	  			  if(turbo2 == 4){
-	  				  turbo2 = 0;
-	  			  }
-				  LCD_Sprite(50,50,10,8,explosion,4,turbo2,0,0);*/
+
+
+
+
+
 
 
 	  		  }while(state == 9);
@@ -1791,40 +1870,64 @@ static void MX_SPI1_Init(void)
 }
 
 /**
-  * @brief TIM6 Initialization Function
+  * @brief TIM13 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM6_Init(void)
+static void MX_TIM13_Init(void)
 {
 
-  /* USER CODE BEGIN TIM6_Init 0 */
+  /* USER CODE BEGIN TIM13_Init 0 */
 
-  /* USER CODE END TIM6_Init 0 */
+  /* USER CODE END TIM13_Init 0 */
 
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  /* USER CODE BEGIN TIM13_Init 1 */
 
-  /* USER CODE BEGIN TIM6_Init 1 */
-
-  /* USER CODE END TIM6_Init 1 */
-  htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 128;
-  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 3036;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  /* USER CODE END TIM13_Init 1 */
+  htim13.Instance = TIM13;
+  htim13.Init.Prescaler = 1000-1;
+  htim13.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim13.Init.Period = 16000-1;
+  htim13.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim13.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim13) != HAL_OK)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  /* USER CODE BEGIN TIM13_Init 2 */
+
+  /* USER CODE END TIM13_Init 2 */
+
+}
+
+/**
+  * @brief TIM14 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM14_Init(void)
+{
+
+  /* USER CODE BEGIN TIM14_Init 0 */
+
+  /* USER CODE END TIM14_Init 0 */
+
+  /* USER CODE BEGIN TIM14_Init 1 */
+
+  /* USER CODE END TIM14_Init 1 */
+  htim14.Instance = TIM14;
+  htim14.Init.Prescaler = 1000-1;
+  htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim14.Init.Period = 16000-1;
+  htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim14) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM6_Init 2 */
+  /* USER CODE BEGIN TIM14_Init 2 */
 
-  /* USER CODE END TIM6_Init 2 */
+  /* USER CODE END TIM14_Init 2 */
 
 }
 
@@ -2084,13 +2187,80 @@ void j2borrar(void){
 	}
 
 }
+void cool1(void){
+	if(cd1 == 0){
+		LCD_Print("0", 260,5,2,colorj1,0x0000);
+		HAL_TIM_Base_Stop_IT(&htim14);
+	}else if(cd1 == 1){
+		LCD_Print("1", 260,5,2,colorj1,0x0000);
+	}else if(cd1 == 2){
+		LCD_Print("2", 260,5,2,colorj1,0x0000);
+	}else if(cd1 == 3){
+		LCD_Print("3", 260,5,2,colorj1,0x0000);
+	}else if(cd1 == 4){
+		LCD_Print("4", 260,5,2,colorj1,0x0000);
+	}else if(cd1 == 5){
+		LCD_Print("5", 260,5,2,colorj1,0x0000);
+	}else if(cd1 == 6){
+		LCD_Print("6", 260,5,2,colorj1,0x0000);
+	}else if(cd1 == 7){
+		LCD_Print("7", 260,5,2,colorj1,0x0000);
+	}else if(cd1 == 8){
+		LCD_Print("8", 260,5,2,colorj1,0x0000);
+	}
+}
+void cool2(void){
+	if(cd2 == 0){
+		LCD_Print("0", 260,210,2,colorj2,0x0000);
+		HAL_TIM_Base_Stop_IT(&htim13);
+	}else if(cd2 == 1){
+		LCD_Print("1", 260,210,2,colorj2,0x0000);
+	}else if(cd2 == 2){
+		LCD_Print("2", 260,210,2,colorj2,0x0000);
+	}else if(cd2 == 3){
+		LCD_Print("3", 260,210,2,colorj2,0x0000);
+	}else if(cd2 == 4){
+		LCD_Print("4", 260,210,2,colorj2,0x0000);
+	}else if(cd2 == 5){
+		LCD_Print("5", 260,210,2,colorj2,0x0000);
+	}else if(cd2 == 6){
+		LCD_Print("6", 260,210,2,colorj2,0x0000);
+	}else if(cd2 == 7){
+		LCD_Print("7", 260,210,2,colorj2,0x0000);
+	}else if(cd2 == 8){
+		LCD_Print("8", 260,210,2,colorj2,0x0000);
+	}
+}
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 	if(state == 3){
 		c = 1;
 	}
 	if(RX[0] == 'f'){
-		turbo1 = 1;
+		if(state == 3){
+			if(cd1 == 0){
+				cd1 = 8;
+				HAL_TIM_Base_Start_IT(&htim14);
+			}
+		}else if(state == 0 || state == 5){
+			state = 6;
+		}else if(state == 6){
+			state = 7;
+		}
+
+	}
+	if(RX[0] == 'k'){
+		if(state == 3){
+			if(cd2 == 0){
+				cd2 = 8;
+				HAL_TIM_Base_Start_IT(&htim13);
+			}
+		}else if(state == 0 || state == 5){
+			state = 6;
+		}else if(state == 6){
+			state = 7;
+		}
+
 	}
 	if(RX[0] == 'e'){
 		if(state == 0 || state == 5){
@@ -2157,9 +2327,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 			if (derecha != 0){
 				derecha--;
 			}
-			if (abajo != 0){
+			/*if (abajo != 0){
 				abajo--;
-			}
+			}*/
 
 			if (izquierda != 0){
 				izquierda--;
@@ -2232,9 +2402,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 				abajo = 2;
 			}
 
-			if (arriba != 0){
+			/*if (arriba != 0){
 				arriba--;
-			}
+			}*/
 			if (derecha != 0){
 				derecha--;
 			}
@@ -2317,9 +2487,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 				abajo--;
 			}
 
-			if (derecha != 0){
+			/*if (derecha != 0){
 				derecha--;
-			}
+			}*/
 
 			if (arriba == 1){
 
@@ -2395,9 +2565,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 				abajo--;
 			}
 
-			if (izquierda != 0){
+			/*if (izquierda != 0){
 				izquierda--;
-			}
+			}*/
 			if (abajo == 1){
 
 				xx[n1] = movex+4;
@@ -2467,9 +2637,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 			if (derecha2 != 0){
 				derecha2--;
 			}
-			if (abajo2 != 0){
+			/*if (abajo2 != 0){
 				abajo2--;
-			}
+			}*/
 
 			if (izquierda2 != 0){
 				izquierda2--;
@@ -2540,9 +2710,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 				abajo2 = 2;
 			}
 
-			if (arriba2 != 0){
+			/*if (arriba2 != 0){
 				arriba2--;
-			}
+			}*/
 			if (derecha2 != 0){
 				derecha2--;
 			}
@@ -2625,9 +2795,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 				abajo2--;
 			}
 
-			if (izquierda2 != 0){
+			/*if (izquierda2 != 0){
 				izquierda2--;
-			}
+			}*/
 			if (abajo2 == 1){
 
 				xx2[n3] = movex2+4;
@@ -2702,9 +2872,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 				abajo2--;
 			}
 
-			if (derecha2 != 0){
+			/*if (derecha2 != 0){
 				derecha2--;
-			}
+			}*/
 
 			if (arriba2 == 1){
 
@@ -2734,18 +2904,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 	HAL_UART_Receive_IT(&huart2, RX, 1);
 }
-/*void TIM6_DAC_IRQHandler(void){
-	if (movex < 200 && movey == 33){
-		movex++;
-	}else if(movex == 200){
-		movey++;
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if(htim == &htim14){
+		cd1--;
+	}else if(htim == &htim13){
+		cd2--;
 	}
-	if(movey == 150){
-		movex = 200;
-		movey = 150;
-	}
-	HAL_TIM_IRQHandler(&htim6);
-}*/
+}
 /* USER CODE END 4 */
 
 /**
